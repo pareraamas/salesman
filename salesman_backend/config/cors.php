@@ -9,6 +9,8 @@ return [
         'admin/*',
         'admin-api/*',
         'filament/*',
+        'admin/filament/*',
+        'admin-api/filament/*',
     ],
     'allowed_methods' => ['*'],
     'allowed_origins' => ['*'],
@@ -19,4 +21,5 @@ return [
     ],
     'max_age' => 0,
     'supports_credentials' => true,
+    'allowed_headers' => ['*'],
 ];

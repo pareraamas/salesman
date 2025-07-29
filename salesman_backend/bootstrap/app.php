@@ -24,7 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         
         // Web Middleware Group
         $middleware->web([
-            \App\Http\Middleware\EncryptCookies::class,
+            // \App\Http\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
@@ -56,13 +56,18 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin/*',
             'admin-api/*',
             'filament/*',
+            'admin/filament/*',
+            'admin-api/filament/*',
             'sanctum/csrf-cookie',
             'login',
             'logout',
-            'api/login',
             'api/logout',
             'api/user',
         ]);
+        
+        // Ensure session is started for web routes
+        $middleware->web(\Illuminate\Session\Middleware\StartSession::class);
+        $middleware->web(\Illuminate\View\Middleware\ShareErrorsFromSession::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
