@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends BaseController
 {
@@ -53,20 +56,42 @@ class AuthController extends BaseController
      */
     public function login(LoginRequest $request)
     {
-        $credentials = $request->only('email', 'password');
+        try {
+            $credentials = $request->only('email', 'password');
 
-        if (Auth::attempt($credentials)) {
+            if (!Auth::attempt($credentials)) {
+                return $this->sendError(
+                    'Login gagal',
+                    ['email' => ['Email atau password salah']],
+                    HttpResponse::HTTP_UNAUTHORIZED
+                );
+            }
+
             $user = Auth::user();
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            return $this->sendResponse([
-                'token' => $token,
-                'token_type' => 'Bearer',
-                'user' => $user
-            ], 'Login successful');
+            return $this->sendResponse(
+                [
+                    'token' => $token,
+                    'token_type' => 'Bearer',
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'created_at' => $user->created_at,
+                    ]
+                ],
+                'Login berhasil',
+                HttpResponse::HTTP_OK
+            );
+        } catch (\Exception $e) {
+            Log::error('Login error: ' . $e->getMessage());
+            return $this->sendError(
+                'Terjadi kesalahan saat login',
+                null,
+                HttpResponse::HTTP_INTERNAL_SERVER_ERROR
+            );
         }
-
-        return $this->sendError('Unauthorized', ['error' => 'Invalid credentials'], 401);
     }
 
     /**
@@ -88,8 +113,21 @@ class AuthController extends BaseController
      */
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
-        return $this->sendResponse([], 'Successfully logged out');
+        try {
+            $request->user()->currentAccessToken()->delete();
+            return $this->sendResponse(
+                null,
+                'Logout berhasil',
+                HttpResponse::HTTP_OK
+            );
+        } catch (\Exception $e) {
+            Log::error('Logout error: ' . $e->getMessage());
+            return $this->sendError(
+                'Gagal logout',
+                null,
+                HttpResponse::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
     }
 
     /**
@@ -116,6 +154,109 @@ class AuthController extends BaseController
      */
     public function user(Request $request)
     {
-        return $this->sendResponse($request->user(), 'User retrieved successfully');
+        try {
+            $user = $request->user();
+            
+            return $this->sendResponse(
+                [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'created_at' => $user->created_at,
+                ],
+                'Data user berhasil diambil',
+                HttpResponse::HTTP_OK
+            );
+        } catch (\Exception $e) {
+            Log::error('Get user error: ' . $e->getMessage());
+            return $this->sendError(
+                'Gagal mengambil data user',
+                null,
+                HttpResponse::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/register",
+     *     tags={"Authentication"},
+     *     summary="Register a new user",
+     *     operationId="register",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name","email","password","password_confirmation"},
+     *             @OA\Property(property="name", type="string", example="John Doe"),
+     *             @OA\Property(property="email", type="string", format="email", example="user@example.com"),
+     *             @OA\Property(property="password", type="string", format="password", example="password"),
+     *             @OA\Property(property="password_confirmation", type="string", format="password", example="password")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="User registered successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="token", type="string", example="1|abcdefghijklmnopqrstuvwxyz"),
+     *                 @OA\Property(property="token_type", type="string", example="Bearer"),
+     *                 @OA\Property(property="user", type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="John Doe"),
+     *                     @OA\Property(property="email", type="string", example="user@example.com"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time")
+     *                 )
+     *             ),
+     *             @OA\Property(property="message", type="string", example="User registered successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     )
+     * )
+     */
+    public function register(RegisterRequest $request)
+    {
+        try {
+            $validated = $request->validated();
+            
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'email_verified_at' => now(),
+                'remember_token' => Str::random(10),
+            ]);
+
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return $this->sendResponse(
+                [
+                    'token' => $token,
+                    'token_type' => 'Bearer',
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'created_at' => $user->created_at,
+                    ]
+                ],
+                'Registrasi berhasil',
+                HttpResponse::HTTP_CREATED
+            );
+        } catch (\Exception $e) {
+            Log::error('Registration error: ' . $e->getMessage());
+            return $this->sendError(
+                'Gagal melakukan registrasi',
+                null,
+                HttpResponse::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
     }
 }

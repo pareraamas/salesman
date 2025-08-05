@@ -15,7 +15,7 @@
     },
     "servers": [
         {
-            "url": "http://my-default-host.com",
+            "url": "http://salesman_backend.test",
             "description": "API Server"
         },
         {
@@ -215,80 +215,137 @@
                 ]
             }
         },
-        "/api/consignments": {
+        "/api/register": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Register a new user",
+                "operationId": "register",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "user@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "User registered successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "token": {
+                                                    "type": "string",
+                                                    "example": "1|abcdefghijklmnopqrstuvwxyz"
+                                                },
+                                                "token_type": {
+                                                    "type": "string",
+                                                    "example": "Bearer"
+                                                },
+                                                "user": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "John Doe"
+                                                        },
+                                                        "email": {
+                                                            "type": "string",
+                                                            "example": "user@example.com"
+                                                        },
+                                                        "created_at": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "User registered successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/consignments/list": {
             "get": {
                 "tags": [
                     "Consignments"
                 ],
-                "summary": "Get list of consignments with optional filters",
-                "operationId": "getConsignmentsList",
-                "parameters": [
-                    {
-                        "name": "store_id",
-                        "in": "query",
-                        "description": "Filter by store ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "product_id",
-                        "in": "query",
-                        "description": "Filter by product ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "status",
-                        "in": "query",
-                        "description": "Filter by status (active, sold, returned)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "active",
-                                "sold",
-                                "returned"
-                            ]
-                        }
-                    },
-                    {
-                        "name": "from_date",
-                        "in": "query",
-                        "description": "Filter by consignment date from (YYYY-MM-DD)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "format": "date"
-                        }
-                    },
-                    {
-                        "name": "to_date",
-                        "in": "query",
-                        "description": "Filter by consignment date to (YYYY-MM-DD)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "format": "date"
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "description": "Items per page",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 15
-                        }
-                    }
-                ],
+                "summary": "Get all consignments for dropdown",
+                "operationId": "getConsignmentsListAll",
                 "responses": {
                     "200": {
-                        "description": "Successful operation",
+                        "description": "Consignments retrieved successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -300,7 +357,25 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/components/schemas/Consignment"
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "code": {
+                                                        "type": "string",
+                                                        "example": "CNS-001"
+                                                    },
+                                                    "store_name": {
+                                                        "type": "string",
+                                                        "example": "Toko Baru"
+                                                    },
+                                                    "product_name": {
+                                                        "type": "string",
+                                                        "example": "Product Name"
+                                                    }
+                                                },
+                                                "type": "object"
                                             }
                                         },
                                         "message": {
@@ -319,7 +394,9 @@
                         "bearerAuth": []
                     }
                 ]
-            },
+            }
+        },
+        "/api/consignments": {
             "post": {
                 "tags": [
                     "Consignments"
@@ -525,6 +602,26 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "Cannot delete consignment with related records",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Cannot delete consignment with related transactions"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "404": {
                         "description": "Consignment not found"
                     }
@@ -631,37 +728,16 @@
                 ]
             }
         },
-        "/api/products": {
+        "/api/products/list": {
             "get": {
                 "tags": [
                     "Products"
                 ],
-                "summary": "Get list of products",
-                "operationId": "getProductsList",
-                "parameters": [
-                    {
-                        "name": "search",
-                        "in": "query",
-                        "description": "Search term",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "description": "Items per page",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 15
-                        }
-                    }
-                ],
+                "summary": "Get all products for dropdown",
+                "operationId": "getProductsListAll",
                 "responses": {
                     "200": {
-                        "description": "Successful operation",
+                        "description": "Products retrieved successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -673,7 +749,21 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/components/schemas/Product"
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Product Name"
+                                                    },
+                                                    "code": {
+                                                        "type": "string",
+                                                        "example": "PRD-001"
+                                                    }
+                                                },
+                                                "type": "object"
                                             }
                                         },
                                         "message": {
@@ -692,7 +782,9 @@
                         "bearerAuth": []
                     }
                 ]
-            },
+            }
+        },
+        "/api/products": {
             "post": {
                 "tags": [
                     "Products"
@@ -898,6 +990,26 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "Cannot delete product with related records",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Cannot delete product with related consignments or transactions"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "404": {
                         "description": "Product not found"
                     }
@@ -909,37 +1021,16 @@
                 ]
             }
         },
-        "/api/stores": {
+        "/api/stores/list": {
             "get": {
                 "tags": [
                     "Stores"
                 ],
-                "summary": "Get list of stores",
-                "operationId": "getStoresList",
-                "parameters": [
-                    {
-                        "name": "search",
-                        "in": "query",
-                        "description": "Search term",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "description": "Items per page",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 15
-                        }
-                    }
-                ],
+                "summary": "Get all stores for dropdown",
+                "operationId": "getStoresListAll",
                 "responses": {
                     "200": {
-                        "description": "Successful operation",
+                        "description": "Stores retrieved successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -951,7 +1042,17 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/components/schemas/Store"
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Toko Baru"
+                                                    }
+                                                },
+                                                "type": "object"
                                             }
                                         },
                                         "message": {
@@ -963,9 +1064,6 @@
                                 }
                             }
                         }
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
                     }
                 },
                 "security": [
@@ -973,7 +1071,9 @@
                         "bearerAuth": []
                     }
                 ]
-            },
+            }
+        },
+        "/api/stores": {
             "post": {
                 "tags": [
                     "Stores"
@@ -1179,6 +1279,26 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "Cannot delete store with related records",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Cannot delete store with related records"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
                     "404": {
                         "description": "Store not found"
                     }
@@ -1190,75 +1310,16 @@
                 ]
             }
         },
-        "/api/transactions": {
+        "/api/transactions/summary": {
             "get": {
                 "tags": [
                     "Transactions"
                 ],
-                "summary": "Get list of transactions with optional filters",
-                "operationId": "getTransactionsList",
-                "parameters": [
-                    {
-                        "name": "consignment_id",
-                        "in": "query",
-                        "description": "Filter by consignment ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "store_id",
-                        "in": "query",
-                        "description": "Filter by store ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "product_id",
-                        "in": "query",
-                        "description": "Filter by product ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "from_date",
-                        "in": "query",
-                        "description": "Filter by transaction date from (YYYY-MM-DD)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "format": "date"
-                        }
-                    },
-                    {
-                        "name": "to_date",
-                        "in": "query",
-                        "description": "Filter by transaction date to (YYYY-MM-DD)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "format": "date"
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "description": "Items per page",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 15
-                        }
-                    }
-                ],
+                "summary": "Get summary of transactions for reporting",
+                "operationId": "getTransactionsSummary",
                 "responses": {
                     "200": {
-                        "description": "Successful operation",
+                        "description": "Transactions summary retrieved successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1268,14 +1329,53 @@
                                             "example": true
                                         },
                                         "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/Transaction"
-                                            }
+                                            "properties": {
+                                                "total_transactions": {
+                                                    "type": "integer",
+                                                    "example": 100
+                                                },
+                                                "total_sold": {
+                                                    "type": "integer",
+                                                    "example": 500
+                                                },
+                                                "total_returned": {
+                                                    "type": "integer",
+                                                    "example": 50
+                                                },
+                                                "stores_summary": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "store_id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "store_name": {
+                                                                "type": "string",
+                                                                "example": "Toko Baru"
+                                                            },
+                                                            "total_transactions": {
+                                                                "type": "integer",
+                                                                "example": 10
+                                                            },
+                                                            "total_sold": {
+                                                                "type": "integer",
+                                                                "example": 50
+                                                            },
+                                                            "total_returned": {
+                                                                "type": "integer",
+                                                                "example": 5
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Transactions retrieved successfully"
+                                            "example": "Transactions summary retrieved successfully"
                                         }
                                     },
                                     "type": "object"
@@ -1289,7 +1389,9 @@
                         "bearerAuth": []
                     }
                 ]
-            },
+            }
+        },
+        "/api/transactions": {
             "post": {
                 "tags": [
                     "Transactions"
@@ -1488,6 +1590,26 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Transaction deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Cannot delete transaction with related records",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Cannot delete transaction with related records"
                                         }
                                     },
                                     "type": "object"

@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Hash;
 
 // Public routes
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);
 
 // Test route - temporary
 Route::get('/test-login', function () {
@@ -50,15 +51,19 @@ Route::middleware(['auth:sanctum', 'api'])->group(function () {
     
     // Stores
     Route::apiResource('stores', StoreController::class);
+    Route::get('/stores/list', [StoreController::class, 'listAll']);
     
     // Products
     Route::apiResource('products', ProductController::class);
+    Route::get('/products/list', [ProductController::class, 'listAll']);
     
     // Consignments
     Route::apiResource('consignments', ConsignmentController::class);
+    Route::get('/consignments/list', [ConsignmentController::class, 'listAll']);
     Route::get('/consignments/active', [ConsignmentController::class, 'active']);
     Route::get('/consignments/{consignment}/transactions', [ConsignmentController::class, 'transactions']);
     
     // Transactions
     Route::apiResource('transactions', TransactionController::class);
+    Route::get('/transactions/summary', [TransactionController::class, 'summary']);
 });
