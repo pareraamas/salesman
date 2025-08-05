@@ -21,21 +21,21 @@ class ConsignmentStats extends BaseWidget
                 ->descriptionIcon('heroicon-o-document-chart-bar')
                 ->color('primary')
                 ->url(route('filament.admin.resources.konsinyasi.index')),
-                
+
             Stat::make('Aktif', $active)
                 ->description('Konsinyasi yang masih aktif')
                 ->descriptionIcon('heroicon-o-arrow-path')
                 ->color('success')
                 ->chart([5, 10, 12, 8, 15, 12, 8])
                 ->url(route('filament.admin.resources.konsinyasi.index', ['tableFilters[status][value]' => 'active'])),
-                
+
             Stat::make('Terjual', $sold)
                 ->description('Konsinyasi yang sudah terjual')
                 ->descriptionIcon('heroicon-o-banknotes')
                 ->color('primary')
                 ->chart([2, 3, 4, 5, 6, 7, 8])
                 ->url(route('filament.admin.resources.konsinyasi.index', ['tableFilters[status][value]' => 'sold'])),
-                
+
             Stat::make('Dikembalikan', $returned)
                 ->description('Konsinyasi yang dikembalikan')
                 ->descriptionIcon('heroicon-o-arrow-uturn-left')
@@ -45,8 +45,8 @@ class ConsignmentStats extends BaseWidget
         ];
     }
 
-    public static function canView(): bool
-    {
-        return auth()->user()->can('viewAny', Consignment::class);
-    }
+    // public static function canView(): bool
+    // {
+    //     return auth()->user()->can('viewAny', Consignment::class);
+    // }
 }

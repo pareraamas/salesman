@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Consignment;
 
 class Store extends Model
 {
@@ -40,12 +41,20 @@ class Store extends Model
     }
 
     /**
+     * Get the active consignments for the store.
+     */
+    public function activeConsignments(): HasMany
+    {
+        return $this->hasMany(Consignment::class)->where('status', 'active');
+    }
+
+    /**
      * Get the full URL for the store's photo.
      *
      * @return string|null
      */
-    public function getPhotoUrlAttribute()
-    {
-        return $this->photo_path ? Storage::disk('public')->url($this->photo_path) : null;
-    }
+    // public function getPhotoUrlAttribute()
+    // {
+    //     return $this->photo_path ? Storage::disk('public')->url($this->photo_path) : null;
+    // }
 }

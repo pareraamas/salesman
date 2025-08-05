@@ -27,6 +27,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->registration()
             ->colors([
                 'primary' => Color::Amber,
             ])
@@ -37,8 +38,12 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+                // Widgets\AccountWidget::class,
+                // Custom widgets
+                \App\Filament\Widgets\StoresOverview::class,
+                \App\Filament\Widgets\ConsignmentStats::class,
+                \App\Filament\Widgets\RecentConsignments::class,
+                \App\Filament\Widgets\RecentTransactions::class,
             ])
             ->middleware([
                 EncryptCookies::class,

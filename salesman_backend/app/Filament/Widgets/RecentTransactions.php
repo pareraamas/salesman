@@ -40,13 +40,13 @@ class RecentTransactions extends BaseWidget
                     ->label('Terjual')
                     ->badge()
                     ->color('success')
-                    ->formatStateUsing(fn ($state) => $state > 0 ? $state : '-')
+                    ->formatStateUsing(fn($state) => $state > 0 ? $state : '-')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('returned_quantity')
                     ->label('Dikembalikan')
                     ->badge()
                     ->color('warning')
-                    ->formatStateUsing(fn ($state) => $state > 0 ? $state : '-')
+                    ->formatStateUsing(fn($state) => $state > 0 ? $state : '-')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('transaction_date')
                     ->label('Tanggal')
@@ -55,14 +55,14 @@ class RecentTransactions extends BaseWidget
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()
-                    ->url(fn (Transaction $record): string => route('filament.admin.resources.transactions.view', $record->id)),
+                    ->url(fn(Transaction $record): string => route('filament.admin.resources.transactions.view', $record->id)),
             ])
             ->emptyStateHeading('Belum ada data transaksi')
             ->emptyStateDescription('Buat transaksi baru untuk memulai');
     }
 
-    public static function canView(): bool
-    {
-        return auth()->user()->can('viewAny', Transaction::class);
-    }
+    // public static function canView(): bool
+    // {
+    //     return auth()->user()->can('viewAny', Transaction::class);
+    // }
 }

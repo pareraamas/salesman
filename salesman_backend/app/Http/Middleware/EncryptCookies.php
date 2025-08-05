@@ -13,7 +13,8 @@ class EncryptCookies extends Middleware
      */
     protected $except = [
         'XSRF-TOKEN',
-        'laravel_session',
+        // When modifying APP_NAME in the .env file, ensure to also update this session name: "salesman_session", using all lowercase letters.
+        'salesman_session',
         'XSRF-TOKEN',
         'filament_session',
         'remember_web_*',

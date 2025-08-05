@@ -49,18 +49,18 @@ class RecentConsignments extends BaseWidget
                     ->label('Tgl Ambil')
                     ->date('d M Y')
                     ->sortable()
-                    ->color(fn ($record) => $record->pickup_date < now() ? 'danger' : null)
-                    ->description(fn ($record) => $record->pickup_date->diffForHumans()),
+                    ->color(fn($record) => $record->pickup_date < now() ? 'danger' : null)
+                    ->description(fn($record) => $record->pickup_date->diffForHumans()),
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'active' => 'success',
                         'returned' => 'warning',
                         'sold' => 'primary',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
                         'active' => 'Aktif',
                         'returned' => 'Dikembalikan',
                         'sold' => 'Terjual',
@@ -69,14 +69,14 @@ class RecentConsignments extends BaseWidget
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()
-                    ->url(fn (Consignment $record): string => route('filament.admin.resources.konsinyasi.view', $record->id)),
+                    ->url(fn(Consignment $record): string => route('filament.admin.resources.konsinyasi.view', $record->id)),
             ])
             ->emptyStateHeading('Belum ada data konsinyasi')
             ->emptyStateDescription('Buat konsinyasi baru untuk memulai');
     }
 
-    public static function canView(): bool
-    {
-        return auth()->user()->can('viewAny', Consignment::class);
-    }
+    // public static function canView(): bool
+    // {
+    //     return auth()->user()->can('viewAny', Consignment::class);
+    // }
 }
