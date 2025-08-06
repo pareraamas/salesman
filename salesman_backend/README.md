@@ -3,7 +3,17 @@
 ![Laravel](https://img.shields.io/badge/laravel-%23FF2D20.svg?style=for-the-badge&logo=laravel&logoColor=white)
 ![PHP](https://img.shields.io/badge/php-%23777BB4.svg?style=for-the-badge&logo=php&logoColor=white)
 
-## Tentang Aplikasi
+![Admin Dashboard Preview](assest/admin-demo.png)
+
+## 📚 API Documentation
+
+You can access the API documentation after running the project at:
+
+```
+http://localhost:8000/api/documentation
+```
+
+## 📋 Tentang Aplikasi
 
 Aplikasi Salesman adalah sebuah sistem manajemen penjualan yang dibangun dengan Laravel. Aplikasi ini dirancang untuk membantu tim penjualan dalam mengelola data pelanggan, transaksi, dan laporan penjualan.
 
