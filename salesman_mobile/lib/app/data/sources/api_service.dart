@@ -1,81 +1,93 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:dio/dio.dart' as dio;
+import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:get/get.dart';
 import 'package:logger/logger.dart';
+import '../models/app_response.dart';
 
-class ApiService extends GetxService {
-  static const String _baseUrlKey = 'API_BASE_URL';
-  static const Duration _defaultTimeout = Duration(seconds: 30);
-  static const Duration _receiveTimeout = Duration(seconds: 30);
-  static const Duration _sendTimeout = Duration(seconds: 30);
+// Re-export Dio types for easier access
+
+class ApiService {
+  static const String _baseUrlKey = 'BASE_URL';
+  static const int _defaultTimeoutSeconds = 30;
+  static const int _receiveTimeoutSeconds = 30;
+  static const int _sendTimeoutSeconds = 30;
+  static const Duration _defaultTimeout = Duration(seconds: _defaultTimeoutSeconds);
+  static const Duration _receiveTimeout = Duration(seconds: _receiveTimeoutSeconds);
+  static const Duration _sendTimeout = Duration(seconds: _sendTimeoutSeconds);
   static const int _maxRetries = 3;
 
-  late final dio.Dio _dio;
-  final _logger = Logger(
-    printer: PrettyPrinter(
-      methodCount: 0,
-      errorMethodCount: 5,
-      lineLength: 50,
-      colors: true,
-      printEmojis: true,
-    ),
-  );
+  late final Dio _dio;
+  final _logger = Logger(printer: PrettyPrinter(methodCount: 0, errorMethodCount: 5, lineLength: 50, colors: true, printEmojis: true));
+
   // Singleton pattern
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
-  ApiService._internal();
+
+  // Private constructor
+  ApiService._internal() {
+    _init();
+  }
+
+  // Initialize the service
+  Future<void> init() async {
+    await dotenv.load(fileName: '.env');
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: dotenv.get(_baseUrlKey, fallback: 'http://localhost:8000/api'),
+        connectTimeout: _defaultTimeout,
+        receiveTimeout: _receiveTimeout,
+        sendTimeout: _sendTimeout,
+        headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+        responseType: ResponseType.json,
+        validateStatus: (status) => status! < 500,
+      ),
+    );
+    _addInterceptors();
+  }
 
   // Token management
   String? _authToken;
-  
+
+  // Get authentication token
+  String? get token => _authToken;
+
   // Set authentication token
   void setAuthToken(String? token) {
     _authToken = token;
   }
 
-  Future<ApiService> init() async {
-    try {
-      await dotenv.load(fileName: '.env');
-      
-      _dio = dio.Dio(
-        dio.BaseOptions(
-          baseUrl: dotenv.get(_baseUrlKey, fallback: 'http://localhost:8000/api'),
-          connectTimeout: _defaultTimeout,
-          receiveTimeout: _receiveTimeout,
-          sendTimeout: _sendTimeout,
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-          responseType: dio.ResponseType.json,
-          validateStatus: (status) {
-            return status! < 500; // Consider all status codes below 500 as valid
-          },
-        ),
-      );
+  // Clear authentication token
+  void clearAuthToken() {
+    _authToken = null;
+  }
 
-      // Add interceptors
-      _addInterceptors();
-      
-      return this;
-    } catch (e) {
-      _logger.e('❌ Failed to initialize ApiService', error: e);
-      rethrow;
-    }
+  // Private method for internal initialization
+  void _init() {
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: dotenv.get(_baseUrlKey, fallback: 'http://localhost:8000/api'),
+        connectTimeout: _defaultTimeout,
+        receiveTimeout: _receiveTimeout,
+        sendTimeout: _sendTimeout,
+        headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+        responseType: ResponseType.json,
+        validateStatus: (status) => status! < 500,
+      ),
+    );
+    _addInterceptors();
   }
 
   void _addInterceptors() {
     // Request interceptor
     _dio.interceptors.add(
-      dio.InterceptorsWrapper(
+      InterceptorsWrapper(
         onRequest: (options, handler) async {
           // Add auth token if exists
           if (_authToken != null) {
             options.headers['Authorization'] = 'Bearer $_authToken';
           }
-          
+
           _logRequest(options);
           return handler.next(options);
         },
@@ -83,16 +95,15 @@ class ApiService extends GetxService {
           _logResponse(response);
           return handler.next(response);
         },
-        onError: (dio.DioException e, handler) async {
+        onError: (DioException e, handler) async {
           _logError(e);
-          
+
           // Handle 401 Unauthorized
           if (e.response?.statusCode == 401) {
-            // TODO: Implement token refresh logic if needed
-            // await _refreshToken();
-            // return _retry(e.requestOptions);
+            // TODO: Implement token refresh logic here
+            // For now, just pass the error through
           }
-          
+
           return handler.next(e);
         },
       ),
@@ -100,190 +111,124 @@ class ApiService extends GetxService {
 
     // Add retry interceptor
     _dio.interceptors.add(
-      dio.QueuedInterceptorsWrapper(
-        onError: (dio.DioException error, handler) async {
+      QueuedInterceptorsWrapper(
+        onError: (DioException error, handler) async {
           // Retry on network errors or 5xx server errors
           if (_shouldRetry(error)) {
-            final retryCount = error.requestOptions.extra['retry'] ?? 0;
+            final retryCount = (error.requestOptions.extra['retry'] as int?) ?? 0;
             if (retryCount < _maxRetries) {
-              await Future.delayed(Duration(seconds: 1));
               error.requestOptions.extra['retry'] = retryCount + 1;
-              _logger.w('🔄 Retry ${retryCount + 1}/$_maxRetries: ${error.requestOptions.uri}');
-              return handler.resolve(await _dio.fetch(error.requestOptions));
+              final delaySeconds = 1 + retryCount;
+              await Future.delayed(Duration(seconds: delaySeconds));
+              return handler.resolve(
+                await _dio.request(
+                  error.requestOptions.path,
+                  data: error.requestOptions.data,
+                  queryParameters: error.requestOptions.queryParameters,
+                  options: Options(method: error.requestOptions.method, headers: error.requestOptions.headers),
+                ),
+              );
             }
           }
-          
           return handler.next(error);
         },
       ),
     );
   }
 
-  bool _shouldRetry(dio.DioException error) {
-    return error.type == dio.DioExceptionType.connectionTimeout ||
-        error.type == dio.DioExceptionType.receiveTimeout ||
-        error.type == dio.DioExceptionType.sendTimeout ||
-        (error.response?.statusCode != null &&
-            error.response!.statusCode! >= 500);
+  bool _shouldRetry(DioException error) {
+    return error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.receiveTimeout ||
+        error.type == DioExceptionType.sendTimeout ||
+        (error.response?.statusCode != null && error.response!.statusCode! >= 500);
   }
 
-  void _logRequest(dio.RequestOptions options) {
-    _logger.i(
-      '🌐 [${options.method.toUpperCase()}] ${options.uri}',
-    );
-    _logger.d(
-      '📤 Headers: ${jsonEncode(options.headers)}',
-    );
+  void _logRequest(RequestOptions options) {
+    _logger.i('🌐 [${options.method.toUpperCase()}] ${options.uri}');
+    _logger.d('📤 Headers: ${options.headers}');
     if (options.data != null) {
-      _logger.d(
-        '📦 Request Body: ${options.data is dio.FormData ? '[FormData]' : jsonEncode(options.data)}',
-      );
+      _logger.d('📦 Request Body: ${options.data is FormData ? '[FormData]' : jsonEncode(options.data)}');
     }
   }
 
-  void _logResponse(dio.Response response) {
-    _logger.i(
-      '✅ [${response.statusCode}] ${response.requestOptions.uri}',
-    );
-    _logger.d(
-      '📥 Response: ${jsonEncode(response.data)}',
-    );
+  void _logResponse(Response response) {
+    _logger.i('✅ [${response.statusCode}] ${response.requestOptions.uri}');
+    _logger.d('📥 Response: ${jsonEncode(response.data)}');
   }
 
-  void _logError(dio.DioException error) {
-    _logger.e(
-      '❌ [${error.response?.statusCode}] ${error.requestOptions.uri}',
-      error: error,
-      stackTrace: error.stackTrace,
-    );
-    if (error.response != null) {
-      _logger.d('❌ Error Response: ${error.response?.data}');
+  void _logError(DioException error) {
+    _logger.e('❌ [${error.response?.statusCode}] ${error.requestOptions.uri}', error: error, stackTrace: error.stackTrace);
+    if (error.response?.data != null) {
+      _logger.e('❌ Error Response: ${jsonEncode(error.response?.data)}');
     }
   }
 
   // Helper method to handle error responses
-  Map<String, dynamic> _handleError(dio.DioException e) {
+  AppResponse<T> _handleError<T>(DioException e) {
+    _logger.e('API Error: ${e.message}');
+    
     if (e.response != null) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      final statusCode = e.response?.statusCode;
-      dynamic responseData = e.response?.data;
+      _logger.e('Response data: ${e.response?.data}');
+      _logger.e('Status code: ${e.response?.statusCode}');
       
-      // Log the error details
-      _logger.e('Error Response:');
-      _logger.e('Status: $statusCode');
-      _logger.e('Data: $responseData');
-      
-      String message = 'An error occurred';
-      Map<String, dynamic>? errors;
-      
-      try {
-        if (responseData is Map) {
-          message = responseData['message'] ?? 
-                   responseData['error'] ?? 
-                   'An error occurred';
-          errors = responseData['errors'];
-        } else if (responseData is String) {
-          message = responseData.isNotEmpty ? responseData : message;
-        }
-        
-        // Handle specific status codes
-        switch (statusCode) {
-          case 400:
-            message = message.contains('Invalid credentials') 
-                ? 'Email atau password salah' 
-                : 'Permintaan tidak valid';
-            break;
-          case 401:
-            message = 'Sesi telah berakhir, silakan login kembali';
-            // TODO: Trigger logout flow
-            break;
-          case 403:
-            message = 'Anda tidak memiliki izin untuk mengakses fitur ini';
-            break;
-          case 404:
-            message = 'Data tidak ditemukan';
-            break;
-          case 422:
-            message = 'Data yang dimasukkan tidak valid';
-            break;
-          case 500:
-            message = 'Terjadi kesalahan pada server';
-            break;
-          default:
-            message = message;
-        }
-      } catch (e) {
-        _logger.e('Error parsing error response: $e');
-      }
-      
-      return {
-        'success': false,
-        'message': message,
-        'errors': errors,
-        'statusCode': statusCode,
-      };
+      return AppResponse<T>(
+        success: false,
+        message: e.response?.data is Map 
+          ? (e.response?.data as Map)['message']?.toString() 
+          : 'An error occurred',
+        statusCode: e.response?.statusCode,
+        errors: e.response?.data is Map 
+          ? (e.response?.data as Map)['errors'] as Map<String, dynamic>?
+          : null,
+      );
     } else {
-      // Something happened in setting up or sending the request
-      String message = 'Tidak dapat terhubung ke server';
-      
-      if (e.type == dio.DioExceptionType.connectionTimeout ||
-          e.type == dio.DioExceptionType.receiveTimeout ||
-          e.type == dio.DioExceptionType.sendTimeout) {
-        message = 'Koneksi timeout, silakan coba lagi';
-      } else if (e.type == dio.DioExceptionType.connectionError) {
-        message = 'Tidak ada koneksi internet';
-      }
-      
-      _logger.e('Network Error: ${e.message}');
-      
-      return {
-        'success': false,
-        'message': message,
-        'statusCode': 0,
-      };
+      return AppResponse<T>(
+        success: false,
+        message: e.message ?? 'An unexpected error occurred',
+        statusCode: 500,
+      );
     }
   }
 
-  // GET request
-  Future<Map<String, dynamic>> get(
+  // HTTP Methods
+  Future<AppResponse<T>> get<T>(
     String path, {
     Map<String, dynamic>? queryParameters,
-    dio.Options? options,
-    dio.CancelToken? cancelToken,
-    dio.ProgressCallback? onReceiveProgress,
+    Options? options,
+    CancelToken? cancelToken,
+    ProgressCallback? onReceiveProgress,
+    T Function(dynamic json)? fromJsonT,
   }) async {
     try {
-      final response = await _dio.get<dynamic>(
+      final response = await _dio.get(
         path,
         queryParameters: queryParameters,
         options: options,
         cancelToken: cancelToken,
         onReceiveProgress: onReceiveProgress,
       );
-      
-      return {
-        'success': true,
-        'data': response.data,
-        'statusCode': response.statusCode,
-      };
-    } on dio.DioException catch (e) {
+
+      return AppResponse<T>.fromJson(
+        response.data is Map ? response.data as Map<String, dynamic> : {'data': response.data},
+        fromJsonT: fromJsonT,
+      );
+    } on DioException catch (e) {
       return _handleError(e);
     }
   }
 
-  // POST request
-  Future<Map<String, dynamic>> post(
+  Future<AppResponse<T>> post<T>(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
-    dio.Options? options,
-    dio.CancelToken? cancelToken,
-    dio.ProgressCallback? onSendProgress,
-    dio.ProgressCallback? onReceiveProgress,
+    Options? options,
+    CancelToken? cancelToken,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+    T Function(dynamic json)? fromJsonT,
   }) async {
     try {
-      final response = await _dio.post<dynamic>(
+      final response = await _dio.post(
         path,
         data: data,
         queryParameters: queryParameters,
@@ -292,29 +237,28 @@ class ApiService extends GetxService {
         onSendProgress: onSendProgress,
         onReceiveProgress: onReceiveProgress,
       );
-      
-      return {
-        'success': true,
-        'data': response.data,
-        'statusCode': response.statusCode,
-      };
-    } on dio.DioException catch (e) {
+
+      return AppResponse<T>.fromJson(
+        response.data is Map ? response.data as Map<String, dynamic> : {'data': response.data},
+        fromJsonT: fromJsonT,
+      );
+    } on DioException catch (e) {
       return _handleError(e);
     }
   }
 
-  // PUT request
-  Future<Map<String, dynamic>> put(
+  Future<AppResponse<T>> put<T>(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
-    dio.Options? options,
-    dio.CancelToken? cancelToken,
-    dio.ProgressCallback? onSendProgress,
-    dio.ProgressCallback? onReceiveProgress,
+    Options? options,
+    CancelToken? cancelToken,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+    T Function(dynamic json)? fromJsonT,
   }) async {
     try {
-      final response = await _dio.put<dynamic>(
+      final response = await _dio.put(
         path,
         data: data,
         queryParameters: queryParameters,
@@ -323,56 +267,54 @@ class ApiService extends GetxService {
         onSendProgress: onSendProgress,
         onReceiveProgress: onReceiveProgress,
       );
-      
-      return {
-        'success': true,
-        'data': response.data,
-        'statusCode': response.statusCode,
-      };
-    } on dio.DioException catch (e) {
+
+      return AppResponse<T>.fromJson(
+        response.data is Map ? response.data as Map<String, dynamic> : {'data': response.data},
+        fromJsonT: fromJsonT,
+      );
+    } on DioException catch (e) {
       return _handleError(e);
     }
   }
 
-  // DELETE request
-  Future<Map<String, dynamic>> delete(
+  Future<AppResponse<T>> delete<T>(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
-    dio.Options? options,
-    dio.CancelToken? cancelToken,
+    Options? options,
+    CancelToken? cancelToken,
+    T Function(dynamic json)? fromJsonT,
   }) async {
     try {
-      final response = await _dio.delete<dynamic>(
+      final response = await _dio.delete(
         path,
         data: data,
         queryParameters: queryParameters,
         options: options,
         cancelToken: cancelToken,
       );
-      
-      return {
-        'success': true,
-        'data': response.data,
-        'statusCode': response.statusCode,
-      };
-    } on dio.DioException catch (e) {
+
+      return AppResponse<T>.fromJson(
+        response.data is Map ? response.data as Map<String, dynamic> : {'data': response.data},
+        fromJsonT: fromJsonT,
+      );
+    } on DioException catch (e) {
       return _handleError(e);
     }
   }
 
-  // PATCH request
-  Future<Map<String, dynamic>> patch(
+  Future<AppResponse<T>> patch<T>(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
-    dio.Options? options,
-    dio.CancelToken? cancelToken,
-    dio.ProgressCallback? onSendProgress,
-    dio.ProgressCallback? onReceiveProgress,
+    Options? options,
+    CancelToken? cancelToken,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+    T Function(dynamic json)? fromJsonT,
   }) async {
     try {
-      final response = await _dio.patch<dynamic>(
+      final response = await _dio.patch(
         path,
         data: data,
         queryParameters: queryParameters,
@@ -381,28 +323,27 @@ class ApiService extends GetxService {
         onSendProgress: onSendProgress,
         onReceiveProgress: onReceiveProgress,
       );
-      
-      return {
-        'success': true,
-        'data': response.data,
-        'statusCode': response.statusCode,
-      };
-    } on dio.DioException catch (e) {
+
+      return AppResponse<T>.fromJson(
+        response.data is Map ? response.data as Map<String, dynamic> : {'data': response.data},
+        fromJsonT: fromJsonT,
+      );
+    } on DioException catch (e) {
       return _handleError(e);
     }
   }
-  
+
   // Download file
-  Future<Map<String, dynamic>> download(
+  Future<AppResponse<void>> download(
     String urlPath,
     dynamic savePath, {
-    dio.ProgressCallback? onReceiveProgress,
+    ProgressCallback? onReceiveProgress,
     Map<String, dynamic>? queryParameters,
-    dio.CancelToken? cancelToken,
+    CancelToken? cancelToken,
     bool deleteOnError = true,
-    String lengthHeader = dio.Headers.contentLengthHeader,
+    String lengthHeader = Headers.contentLengthHeader,
     dynamic data,
-    dio.Options? options,
+    Options? options,
   }) async {
     try {
       final response = await _dio.download(
@@ -416,44 +357,60 @@ class ApiService extends GetxService {
         data: data,
         options: options,
       );
-      
-      return {
-        'success': true,
-        'data': response.data,
-        'statusCode': response.statusCode,
-      };
-    } on dio.DioException catch (e) {
+
+      return AppResponse(
+        success: true,
+        statusCode: response.statusCode,
+      );
+    } on DioException catch (e) {
       return _handleError(e);
     }
   }
-  
+
   // Upload file
-  Future<Map<String, dynamic>> upload(
+  Future<AppResponse<T>> upload<T>(
     String path, {
-    required dio.FormData data,
+    required FormData data,
     Map<String, dynamic>? queryParameters,
-    dio.Options? options,
-    dio.CancelToken? cancelToken,
-    dio.ProgressCallback? onSendProgress,
-    dio.ProgressCallback? onReceiveProgress,
+    Options? options,
+    CancelToken? cancelToken,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+    T Function(dynamic json)? fromJsonT,
   }) async {
     try {
       final response = await _dio.post<dynamic>(
         path,
         data: data,
         queryParameters: queryParameters,
-        options: options ?? dio.Options(contentType: 'multipart/form-data'),
+        options: options ?? Options(contentType: 'multipart/form-data'),
         cancelToken: cancelToken,
         onSendProgress: onSendProgress,
         onReceiveProgress: onReceiveProgress,
       );
+
+      final responseData = response.data;
+      T? parsedData;
       
-      return {
-        'success': true,
-        'data': response.data,
-        'statusCode': response.statusCode,
-      };
-    } on dio.DioException catch (e) {
+      if (fromJsonT != null && responseData != null) {
+        try {
+          parsedData = fromJsonT(responseData);
+        } catch (e) {
+          _logger.e('Error parsing response data: $e');
+          return AppResponse<T>(
+            success: false,
+            message: 'Error parsing response data',
+            statusCode: response.statusCode,
+          );
+        }
+      }
+
+      return AppResponse<T>(
+        success: true,
+        data: parsedData,
+        statusCode: response.statusCode,
+      );
+    } on DioException catch (e) {
       return _handleError(e);
     }
   }

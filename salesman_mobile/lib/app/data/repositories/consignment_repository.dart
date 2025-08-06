@@ -1,197 +1,200 @@
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
+import 'package:salesman_mobile/app/data/models/app_response.dart';
 import 'package:salesman_mobile/app/data/models/consignment_model.dart';
 import 'package:salesman_mobile/app/data/sources/api_service.dart';
 import 'package:salesman_mobile/app/core/api_url.dart';
 
-class ConsignmentRepository extends GetxService {
+class ConsignmentRepository {
   final ApiService _apiService = Get.find<ApiService>();
-  final _logger = Logger(
-    printer: PrettyPrinter(
-      methodCount: 0,
-      errorMethodCount: 5,
-      lineLength: 50,
-      colors: true,
-      printEmojis: true,
-    ),
-  );
+  final _logger = Logger(printer: PrettyPrinter(methodCount: 0, errorMethodCount: 5, lineLength: 50, colors: true, printEmojis: true));
 
   /// Get list of consignments with optional filters
-  Future<Map<String, dynamic>> getConsignments({
-    int? page,
-    int? limit,
-    String? search,
-    String? status,
-    int? storeId,
-    int? productId,
-  }) async {
+  Future<AppResponse<Map<String, dynamic>>> getConsignments({int? page, int? limit, String? search, String? status, int? storeId, int? productId}) async {
     try {
-      final response = await _apiService.get(
+      final response = await _apiService.get<Map<String, dynamic>>(
         ApiUrl.consignments,
         queryParameters: {
-          'page': page,
-          'limit': limit,
-          'search': search,
-          'status': status,
-          'store_id': storeId,
-          'product_id': productId,
+          'page': page, 
+          'limit': limit, 
+          'search': search, 
+          'status': status, 
+          'store_id': storeId, 
+          'product_id': productId
         }..removeWhere((key, value) => value == null),
+        fromJsonT: (json) => json as Map<String, dynamic>,
       );
-      
-      if (response['success'] == true) {
-        final responseData = response['data'] is Map ? response['data'] : response;
-        final dataList = responseData['data'] is List ? responseData['data'] : [];
+
+      if (response.success && response.data != null) {
+        final dataList = response.data!['data'] is List ? response.data!['data'] : [];
+        final consignments = (dataList as List).map((json) => ConsignmentModel.fromJson(json)).toList();
         
-        final consignments = (dataList as List)
-            .map((consignment) => ConsignmentModel.fromJson(consignment))
-            .toList();
-            
-        return {
-          'success': true,
-          'data': consignments,
-          'pagination': responseData['meta'] ?? {},
-        };
+        return AppResponse<Map<String, dynamic>>(
+          success: true,
+          data: {
+            'consignments': consignments,
+            'pagination': response.data!['meta'] ?? {},
+          },
+        );
       }
-      
-      return {
-        'success': false,
-        'message': response['message'] ?? 'Gagal memuat data konsinyasi',
-        'errors': response['errors'],
-      };
+
+      return AppResponse<Map<String, dynamic>>(
+        success: false,
+        message: response.message ?? 'Gagal memuat data konsinyasi',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
       _logger.e('Get consignments error: $e');
-      return {
-        'success': false,
-        'message': 'Terjadi kesalahan saat memuat data konsinyasi',
-      };
+      return AppResponse<Map<String, dynamic>>(
+        success: false,
+        message: 'Terjadi kesalahan saat memuat data konsinyasi',
+      );
     }
   }
 
-  Future<Map<String, dynamic>> getConsignmentById(int id) async {
+  Future<AppResponse<ConsignmentModel>> getConsignmentById(int id) async {
     try {
-      final response = await _apiService.get('${ApiUrl.consignmentById}$id');
-      
-      if (response['success'] == true) {
-        return {
-          'success': true,
-          'data': ConsignmentModel.fromJson(response['data']['data']),
-        };
-      } else {
-        return {
-          'success': false,
-          'message': response['message'] ?? 'Failed to fetch consignment',
-        };
+      final response = await _apiService.get<Map<String, dynamic>>(
+        '${ApiUrl.consignmentById}$id',
+        fromJsonT: (json) => json as Map<String, dynamic>,
+      );
+
+      if (response.success && response.data != null) {
+        return AppResponse<ConsignmentModel>(
+          success: true,
+          data: ConsignmentModel.fromJson(response.data!['data']),
+        );
       }
+      
+      return AppResponse<ConsignmentModel>(
+        success: false,
+        message: response.message ?? 'Gagal mengambil data konsinyasi',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
+      _logger.e('Get consignment by id error: $e');
+      return AppResponse<ConsignmentModel>(
+        success: false,
+        message: 'Terjadi kesalahan saat mengambil data konsinyasi',
+      );
     }
   }
 
-  Future<Map<String, dynamic>> createConsignment(ConsignmentModel consignment) async {
+  Future<AppResponse<ConsignmentModel>> createConsignment(ConsignmentModel consignment) async {
     try {
-      final response = await _apiService.post(
-        ApiUrl.consignments,
+      final response = await _apiService.post<Map<String, dynamic>>(
+        ApiUrl.consignments, 
         data: consignment.toJson(),
+        fromJsonT: (json) => json as Map<String, dynamic>,
       );
-      
-      if (response['success'] == true) {
-        return {
-          'success': true,
-          'data': ConsignmentModel.fromJson(response['data']['data']),
-        };
-      } else {
-        return {
-          'success': false,
-          'message': response['message'] ?? 'Failed to create consignment',
-        };
+
+      if (response.success && response.data != null) {
+        return AppResponse<ConsignmentModel>(
+          success: true,
+          data: ConsignmentModel.fromJson(response.data!['data']),
+        );
       }
+      
+      return AppResponse<ConsignmentModel>(
+        success: false,
+        message: response.message ?? 'Gagal membuat konsinyasi',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
+      _logger.e('Create consignment error: $e');
+      return AppResponse<ConsignmentModel>(
+        success: false,
+        message: 'Terjadi kesalahan saat membuat konsinyasi',
+      );
     }
   }
 
-  Future<Map<String, dynamic>> updateConsignment(ConsignmentModel consignment) async {
+  Future<AppResponse<ConsignmentModel>> updateConsignment(ConsignmentModel consignment) async {
     try {
-      final response = await _apiService.put(
-        '${ApiUrl.consignmentById}${consignment.id}',
+      final response = await _apiService.put<Map<String, dynamic>>(
+        '${ApiUrl.consignmentById}${consignment.id}', 
         data: consignment.toJson(),
+        fromJsonT: (json) => json as Map<String, dynamic>,
       );
-      
-      if (response['success'] == true) {
-        return {
-          'success': true,
-          'data': ConsignmentModel.fromJson(response['data']['data']),
-        };
-      } else {
-        return {
-          'success': false,
-          'message': response['message'] ?? 'Failed to update consignment',
-        };
+
+      if (response.success && response.data != null) {
+        return AppResponse<ConsignmentModel>(
+          success: true,
+          data: ConsignmentModel.fromJson(response.data!['data']),
+        );
       }
+      
+      return AppResponse<ConsignmentModel>(
+        success: false,
+        message: response.message ?? 'Gagal memperbarui konsinyasi',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
+      _logger.e('Update consignment error: $e');
+      return AppResponse<ConsignmentModel>(
+        success: false,
+        message: 'Terjadi kesalahan saat memperbarui konsinyasi',
+      );
     }
   }
 
-  Future<Map<String, dynamic>> deleteConsignment(int id) async {
+  Future<AppResponse<void>> deleteConsignment(int id) async {
     try {
-      final response = await _apiService.delete('${ApiUrl.consignmentById}$id');
-      
-      if (response['success'] == true) {
-        return {'success': true};
-      } else {
-        return {
-          'success': false,
-          'message': response['message'] ?? 'Failed to delete consignment',
-        };
+      final response = await _apiService.delete<Map<String, dynamic>>(
+        '${ApiUrl.consignmentById}$id',
+        fromJsonT: (json) => json as Map<String, dynamic>,
+      );
+
+      if (response.success) {
+        return AppResponse<void>(success: true);
       }
+      
+      return AppResponse<void>(
+        success: false,
+        message: response.message ?? 'Gagal menghapus konsinyasi',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
+      _logger.e('Delete consignment error: $e');
+      return AppResponse<void>(
+        success: false,
+        message: 'Terjadi kesalahan saat menghapus konsinyasi',
+      );
     }
   }
 
-  Future<Map<String, dynamic>> updateConsignmentStatus({
-    required int id,
-    required String status,
-    String? notes,
-  }) async {
+  Future<AppResponse<ConsignmentModel>> updateConsignmentStatus({required int id, required String status, String? notes}) async {
     try {
-      final response = await _apiService.post(
-        '${ApiUrl.consignmentById}$id/update-status',
-        data: {
-          'status': status,
-          'notes': notes,
-        },
+      final response = await _apiService.post<Map<String, dynamic>>(
+        '${ApiUrl.consignmentById}$id/update-status', 
+        data: {'status': status, 'notes': notes},
+        fromJsonT: (json) => json as Map<String, dynamic>,
       );
-      
-      if (response['success'] == true) {
-        return {
-          'success': true,
-          'data': ConsignmentModel.fromJson(response['data']['data']),
-        };
-      } else {
-        return {
-          'success': false,
-          'message': response['message'] ?? 'Failed to update consignment status',
-        };
+
+      if (response.success && response.data != null) {
+        return AppResponse<ConsignmentModel>(
+          success: true,
+          data: ConsignmentModel.fromJson(response.data!['data']),
+        );
       }
+      
+      return AppResponse<ConsignmentModel>(
+        success: false,
+        message: response.message ?? 'Gagal memperbarui status konsinyasi',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
+      _logger.e('Update consignment status error: $e');
+      return AppResponse<ConsignmentModel>(
+        success: false,
+        message: 'Terjadi kesalahan saat memperbarui status konsinyasi',
+      );
     }
   }
 }

@@ -1,158 +1,140 @@
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
+import 'package:salesman_mobile/app/data/models/app_response.dart';
 import 'package:salesman_mobile/app/data/models/user_model.dart';
 import 'package:salesman_mobile/app/data/sources/api_service.dart';
 import 'package:salesman_mobile/app/core/api_url.dart';
 
 class AuthRepository extends GetxService {
   final ApiService _apiService = Get.find<ApiService>();
-  final _logger = Logger(
-    printer: PrettyPrinter(
-      methodCount: 0,
-      errorMethodCount: 5,
-      lineLength: 50,
-      colors: true,
-      printEmojis: true,
-    ),
-  );
+  final _logger = Logger(printer: PrettyPrinter(methodCount: 0, errorMethodCount: 5, lineLength: 50, colors: true, printEmojis: true));
 
   /// Login with email and password
-  Future<Map<String, dynamic>> login(String email, String password) async {
+  Future<AppResponse<Map<String, dynamic>>> login(String email, String password) async {
     try {
-      final response = await _apiService.post(
-        ApiUrl.login,
-        data: {
-          'email': email,
-          'password': password,
-        },
-      );
-      
-      if (response['success'] == true) {
-        final responseData = response['data'] is Map ? response['data'] : response;
-        
+      final response = await _apiService.post<Map<String, dynamic>>(ApiUrl.login, data: {'email': email, 'password': password});
+
+      if (response.success && response.data != null) {
+        final responseData = response.data!;
+        final token = responseData['token'];
+
         // Set token after successful login
-        if (responseData['token'] != null) {
-          _apiService.setAuthToken(responseData['token']);
+        if (token != null) {
+          _apiService.setAuthToken(token);
         }
-        
-        return {
-          'success': true,
-          'data': UserModel.fromJson(responseData['user'] ?? responseData['data']),
-          'token': responseData['token'],
-        };
+
+        return AppResponse<Map<String, dynamic>>(
+          success: true,
+          data: {'user': UserModel.fromJson(responseData['user'] ?? responseData['data'] ?? {}), 'token': token},
+          message: response.message,
+        );
       }
-      
-      return {
-        'success': false,
-        'message': response['message'] ?? 'Login gagal',
-        'errors': response['errors'],
-      };
+
+      return AppResponse<Map<String, dynamic>>(success: false, message: response.message ?? 'Login gagal', errors: response.errors);
     } catch (e) {
       _logger.e('Login error: $e');
-      return {
-        'success': false,
-        'message': e.toString().contains('Exception: ') 
-            ? e.toString().split('Exception: ')[1] 
-            : 'Terjadi kesalahan saat login',
-      };
+      return AppResponse<Map<String, dynamic>>(
+        success: false,
+        message: e.toString().contains('Exception: ') ? e.toString().split('Exception: ')[1] : 'Terjadi kesalahan saat login',
+      );
     }
   }
 
+  /// Check if user is logged in
+  bool isLoggedIn() {
+    return _apiService.token != null && _apiService.token!.isNotEmpty;
+  }
+
   /// Register new user
-  Future<Map<String, dynamic>> register(String name, String email, String password) async {
+  Future<AppResponse<Map<String, dynamic>>> register({
+    required String name,
+    required String email,
+    required String password,
+    required String confirmPassword,
+  }) async {
     try {
-      final response = await _apiService.post(
+      final response = await _apiService.post<Map<String, dynamic>>(
         ApiUrl.register,
         data: {
           'name': name,
           'email': email,
           'password': password,
-          'password_confirmation': password,
-          'role': 'salesman',
+          'password_confirmation': confirmPassword,
         },
       );
-      
-      final responseData = response['data'] is Map ? response['data'] : response;
-      
-      if (response['success'] == true) {
+
+      if (response.success && response.data != null) {
+        final responseData = response.data!;
+        final token = responseData['token'];
+
         // Set token after successful registration
-        if (responseData['token'] != null) {
-          _apiService.setAuthToken(responseData['token']);
+        if (token != null) {
+          _apiService.setAuthToken(token);
         }
-        
-        return {
-          'success': true,
-          'data': UserModel.fromJson(responseData['user'] ?? responseData),
-          'token': responseData['token'],
-        };
+
+        return AppResponse<Map<String, dynamic>>(
+          success: true,
+          data: {'user': UserModel.fromJson(responseData['user'] ?? responseData), 'token': token},
+          message: response.message,
+        );
       }
-      
-      return {
-        'success': false,
-        'message': response['message'] ?? 'Registrasi gagal',
-        'errors': response['errors'],
-      };
+
+      return AppResponse<Map<String, dynamic>>(success: false, message: response.message ?? 'Registrasi gagal', errors: response.errors);
     } catch (e) {
       _logger.e('Registration error: $e');
-      return {
-        'success': false,
-        'message': e.toString().contains('Exception: ') 
-            ? e.toString().split('Exception: ')[1] 
-            : 'Terjadi kesalahan saat registrasi',
-      };
+      return AppResponse<Map<String, dynamic>>(
+        success: false,
+        message: e.toString().contains('Exception: ') ? e.toString().split('Exception: ')[1] : 'Terjadi kesalahan saat registrasi',
+      );
     }
   }
 
   /// Logout user
-  Future<Map<String, dynamic>> logout() async {
+  Future<AppResponse<void>> logout() async {
     try {
-      final response = await _apiService.post(ApiUrl.logout);
-      
+      final response = await _apiService.post<void>(ApiUrl.logout);
+
       // Clear token regardless of response
       _apiService.setAuthToken(null);
-      
-      if (response['success'] == true) {
-        return {'success': true};
+
+      if (response.success) {
+        return AppResponse<void>(success: true, message: response.message);
       }
-      
-      return {
-        'success': false,
-        'message': response['message'] ?? 'Logout gagal',
-      };
+
+      return AppResponse<void>(success: false, message: response.message ?? 'Logout gagal');
     } catch (e) {
       _logger.e('Logout error: $e');
       // Still clear token even if there's an error
       _apiService.setAuthToken(null);
-      
-      return {
-        'success': false,
-        'message': 'Gagal logout. Silakan coba lagi.',
-      };
+
+      return AppResponse<void>(success: false, message: 'Gagal logout. Silakan coba lagi.');
     }
   }
 
   /// Get current authenticated user
-  Future<Map<String, dynamic>> getUser() async {
+  Future<AppResponse<UserModel>> getUser() async {
     try {
-      final response = await _apiService.get(ApiUrl.user);
+      final response = await _apiService.get<Map<String, dynamic>>(ApiUrl.user);
       
-      if (response['success'] == true) {
-        return {
-          'success': true,
-          'data': UserModel.fromJson(response['data'] is Map ? response['data'] : response),
-        };
+      if (response.success && response.data != null) {
+        return AppResponse<UserModel>(
+          success: true,
+          data: UserModel.fromJson(response.data!), 
+          message: response.message,
+        );
       }
       
-      return {
-        'success': false,
-        'message': response['message'] ?? 'Gagal mengambil data pengguna',
-      };
+      return AppResponse<UserModel>(
+        success: false,
+        message: response.message ?? 'Gagal mengambil data pengguna',
+        errors: response.errors,
+      );
     } catch (e) {
       _logger.e('Get user error: $e');
-      return {
-        'success': false,
-        'message': 'Tidak dapat memuat data pengguna',
-      };
+      return AppResponse<UserModel>(
+        success: false,
+        message: 'Terjadi kesalahan saat mengambil data pengguna',
+      );
     }
   }
 }

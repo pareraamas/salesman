@@ -1,11 +1,11 @@
-import 'package:get/get.dart';
 import 'package:logger/logger.dart';
+import 'package:salesman_mobile/app/data/models/app_response.dart';
 import 'package:salesman_mobile/app/data/models/store_model.dart';
 import 'package:salesman_mobile/app/data/sources/api_service.dart';
 import 'package:salesman_mobile/app/core/api_url.dart';
 
-class StoreRepository extends GetxService {
-  final ApiService _apiService = Get.find<ApiService>();
+class StoreRepository {
+  final ApiService _apiService;
   final _logger = Logger(
     printer: PrettyPrinter(
       methodCount: 0,
@@ -16,144 +16,169 @@ class StoreRepository extends GetxService {
     ),
   );
 
+  StoreRepository({required ApiService api}) : _apiService = api;
+
   /// Get list of stores with pagination and search
-  Future<Map<String, dynamic>> getStores({
+  Future<AppResponse<Map<String, dynamic>>> getStores({
     int? page, 
     int? limit, 
     String? search,
     bool? activeOnly,
   }) async {
     try {
-      final response = await _apiService.get(
+      final response = await _apiService.get<Map<String, dynamic>>(
         ApiUrl.stores,
         queryParameters: {
           'page': page,
           'limit': limit,
           'search': search,
-        },
+          'active_only': activeOnly,
+        }..removeWhere((key, value) => value == null),
+        fromJsonT: (json) => json as Map<String, dynamic>,
       );
       
-      if (response['success'] == true) {
-        final responseData = response['data'] is Map ? response['data'] : response;
-        final dataList = responseData['data'] is List ? responseData['data'] : [];
-        
+      if (response.success && response.data != null) {
+        final dataList = response.data!['data'] is List ? response.data!['data'] : [];
         final stores = (dataList as List)
             .map((store) => StoreModel.fromJson(store))
             .toList();
         
-        return {
-          'success': true,
-          'data': stores,
-          'pagination': responseData['meta'] ?? {},
-        };
+        return AppResponse<Map<String, dynamic>>(
+          success: true,
+          data: {
+            'stores': stores,
+            'pagination': response.data!['meta'] ?? {},
+          },
+        );
       }
       
-      return {
-        'success': false,
-        'message': response['message'] ?? 'Gagal memuat data toko',
-        'errors': response['errors'],
-      };
+      return AppResponse<Map<String, dynamic>>(
+        success: false,
+        message: response.message ?? 'Gagal memuat data toko',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
       _logger.e('Get stores error: $e');
-      return {
-        'success': false,
-        'message': 'Terjadi kesalahan saat memuat data toko',
-      };
+      return AppResponse<Map<String, dynamic>>(
+        success: false,
+        message: 'Terjadi kesalahan saat memuat data toko',
+      );
     }
   }
 
-  Future<Map<String, dynamic>> getStoreById(int id) async {
+  Future<AppResponse<StoreModel>> getStoreById(int id) async {
     try {
-      final response = await _apiService.get('${ApiUrl.storeById}$id');
+      final response = await _apiService.get<Map<String, dynamic>>(
+        '${ApiUrl.storeById}$id',
+        fromJsonT: (json) => json as Map<String, dynamic>,
+      );
       
-      if (response['success'] == true) {
-        return {
-          'success': true,
-          'data': StoreModel.fromJson(response['data']['data']),
-        };
-      } else {
-        return {
-          'success': false,
-          'message': response['message'] ?? 'Failed to fetch store',
-        };
+      if (response.success && response.data != null) {
+        return AppResponse<StoreModel>(
+          success: true,
+          data: StoreModel.fromJson(response.data!['data']),
+        );
       }
+      
+      return AppResponse<StoreModel>(
+        success: false,
+        message: response.message ?? 'Gagal mengambil data toko',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
+      _logger.e('Get store by id error: $e');
+      return AppResponse<StoreModel>(
+        success: false,
+        message: 'Terjadi kesalahan saat mengambil data toko',
+      );
     }
   }
 
-  Future<Map<String, dynamic>> createStore(StoreModel store) async {
+  Future<AppResponse<StoreModel>> createStore(StoreModel store) async {
     try {
-      final response = await _apiService.post(
+      final response = await _apiService.post<Map<String, dynamic>>(
         ApiUrl.stores,
         data: store.toJson(),
+        fromJsonT: (json) => json as Map<String, dynamic>,
       );
       
-      if (response['success'] == true) {
-        return {
-          'success': true,
-          'data': StoreModel.fromJson(response['data']['data']),
-        };
-      } else {
-        return {
-          'success': false,
-          'message': response['message'] ?? 'Failed to create store',
-        };
+      if (response.success && response.data != null) {
+        return AppResponse<StoreModel>(
+          success: true,
+          data: StoreModel.fromJson(response.data!['data']),
+        );
       }
+      
+      return AppResponse<StoreModel>(
+        success: false,
+        message: response.message ?? 'Gagal membuat toko',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
+      _logger.e('Create store error: $e');
+      return AppResponse<StoreModel>(
+        success: false,
+        message: 'Terjadi kesalahan saat membuat toko',
+      );
     }
   }
 
-  Future<Map<String, dynamic>> updateStore(StoreModel store) async {
+  Future<AppResponse<StoreModel>> updateStore(StoreModel store) async {
     try {
-      final response = await _apiService.put(
+      final response = await _apiService.put<Map<String, dynamic>>(
         '${ApiUrl.storeById}${store.id}',
         data: store.toJson(),
+        fromJsonT: (json) => json as Map<String, dynamic>,
       );
       
-      if (response['success'] == true) {
-        return {
-          'success': true,
-          'data': StoreModel.fromJson(response['data']['data']),
-        };
-      } else {
-        return {
-          'success': false,
-          'message': response['message'] ?? 'Failed to update store',
-        };
+      if (response.success && response.data != null) {
+        return AppResponse<StoreModel>(
+          success: true,
+          data: StoreModel.fromJson(response.data!['data']),
+        );
       }
+      
+      return AppResponse<StoreModel>(
+        success: false,
+        message: response.message ?? 'Gagal memperbarui toko',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
+      _logger.e('Update store error: $e');
+      return AppResponse<StoreModel>(
+        success: false,
+        message: 'Terjadi kesalahan saat memperbarui toko',
+      );
     }
   }
 
-  Future<Map<String, dynamic>> deleteStore(int id) async {
+  Future<AppResponse<void>> deleteStore(int id) async {
     try {
-      final response = await _apiService.delete('${ApiUrl.storeById}$id');
+      final response = await _apiService.delete<Map<String, dynamic>>(
+        '${ApiUrl.storeById}$id',
+        fromJsonT: (json) => json as Map<String, dynamic>,
+      );
       
-      if (response['success'] == true) {
-        return {'success': true};
-      } else {
-        return {
-          'success': false,
-          'message': response['message'] ?? 'Failed to delete store',
-        };
+      if (response.success) {
+        return AppResponse<void>(success: true);
       }
+      
+      return AppResponse<void>(
+        success: false,
+        message: response.message ?? 'Gagal menghapus toko',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
+      _logger.e('Delete store error: $e');
+      return AppResponse<void>(
+        success: false,
+        message: 'Terjadi kesalahan saat menghapus toko',
+      );
     }
   }
 }

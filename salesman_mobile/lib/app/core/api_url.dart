@@ -8,6 +8,7 @@ class ApiUrl {
   static const String login = '/login';
   static const String register = '/register';
   static const String logout = '/logout';
+  static const String refreshToken = '/refresh-token';
   static const String user = '/user';
 
   // Store Endpoints

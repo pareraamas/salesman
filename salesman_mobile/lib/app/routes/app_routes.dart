@@ -6,11 +6,12 @@ abstract class Routes {
 
   // Auth
   static const LOGIN = _Paths.LOGIN;
-  
+  static const REGISTER = _Paths.REGISTER;
+
   // Main
   static const DASHBOARD = _Paths.DASHBOARD;
   static const HOME = _Paths.HOME;
-  
+
   // Features
   static const STORES = _Paths.STORES;
   static const STORE_DETAIL = _Paths.STORE_DETAIL;
@@ -29,11 +30,12 @@ abstract class _Paths {
 
   // Auth
   static const LOGIN = '/login';
-  
+  static const REGISTER = '/register';
+
   // Main
   static const DASHBOARD = '/dashboard';
   static const HOME = '/home';
-  
+
   // Features
   static const STORES = '/stores';
   static const STORE_DETAIL = '/stores/:id';

@@ -1,23 +1,16 @@
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
+import 'package:salesman_mobile/app/data/models/app_response.dart';
 import 'package:salesman_mobile/app/data/models/transaction_model.dart';
 import 'package:salesman_mobile/app/data/sources/api_service.dart';
 import 'package:salesman_mobile/app/core/api_url.dart';
 
-class TransactionRepository extends GetxService {
+class TransactionRepository {
   final ApiService _apiService = Get.find<ApiService>();
-  final _logger = Logger(
-    printer: PrettyPrinter(
-      methodCount: 0,
-      errorMethodCount: 5,
-      lineLength: 50,
-      colors: true,
-      printEmojis: true,
-    ),
-  );
+  final _logger = Logger(printer: PrettyPrinter(methodCount: 0, errorMethodCount: 5, lineLength: 50, colors: true, printEmojis: true));
 
   /// Get list of transactions with filters
-  Future<Map<String, dynamic>> getTransactions({
+  Future<AppResponse<Map<String, dynamic>>> getTransactions({
     int? page,
     int? limit,
     String? search,
@@ -28,7 +21,7 @@ class TransactionRepository extends GetxService {
     String? endDate,
   }) async {
     try {
-      final response = await _apiService.get(
+      final response = await _apiService.get<Map<String, dynamic>>(
         ApiUrl.transactions,
         queryParameters: {
           'page': page,
@@ -40,129 +33,151 @@ class TransactionRepository extends GetxService {
           'start_date': startDate,
           'end_date': endDate,
         }..removeWhere((key, value) => value == null),
+        fromJsonT: (json) => json as Map<String, dynamic>,
       );
-      
-      if (response['success'] == true) {
-        final responseData = response['data'] is Map ? response['data'] : response;
-        final dataList = responseData['data'] is List ? responseData['data'] : [];
-        
+
+      if (response.success && response.data != null) {
+        final dataList = response.data!['data'] is List ? response.data!['data'] : [];
         final transactions = (dataList as List)
             .map((transaction) => TransactionModel.fromJson(transaction))
             .toList();
-            
-        return {
-          'success': true,
-          'data': transactions,
-          'pagination': responseData['meta'] ?? {},
-        };
+
+        return AppResponse<Map<String, dynamic>>(
+          success: true,
+          data: {
+            'transactions': transactions,
+            'pagination': response.data!['meta'] ?? {},
+          },
+        );
       }
-      
-      return {
-        'success': false,
-        'message': response['message'] ?? 'Gagal memuat data transaksi',
-        'errors': response['errors'],
-      };
+
+      return AppResponse<Map<String, dynamic>>(
+        success: false,
+        message: response.message ?? 'Gagal memuat data transaksi',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
       _logger.e('Get transactions error: $e');
-      return {
-        'success': false,
-        'message': 'Terjadi kesalahan saat memuat data transaksi',
-      };
-    }
-  }
-
-  Future<Map<String, dynamic>> getTransactionById(int id) async {
-    try {
-      final response = await _apiService.get('${ApiUrl.transactionById}$id');
-      
-      if (response['success'] == true) {
-        return {
-          'success': true,
-          'data': TransactionModel.fromJson(response['data']['data']),
-        };
-      } else {
-        return {
-          'success': false,
-          'message': response['message'] ?? 'Failed to fetch transaction',
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
-    }
-  }
-
-  Future<Map<String, dynamic>> createTransaction(TransactionModel transaction) async {
-    try {
-      final response = await _apiService.post(
-        ApiUrl.transactions,
-        data: transaction.toJson(),
+      return AppResponse<Map<String, dynamic>>(
+        success: false,
+        message: 'Terjadi kesalahan saat memuat data transaksi',
       );
-      
-      if (response['success'] == true) {
-        return {
-          'success': true,
-          'data': TransactionModel.fromJson(response['data']['data']),
-        };
-      } else {
-        return {
-          'success': false,
-          'message': response['message'] ?? 'Failed to create transaction',
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
     }
   }
 
-  Future<Map<String, dynamic>> updateTransaction(TransactionModel transaction) async {
+  Future<AppResponse<TransactionModel>> getTransactionById(int id) async {
     try {
-      final response = await _apiService.put(
-        '${ApiUrl.transactionById}${transaction.id}',
-        data: transaction.toJson(),
+      final response = await _apiService.get<Map<String, dynamic>>(
+        '${ApiUrl.transactionById}$id',
+        fromJsonT: (json) => json as Map<String, dynamic>,
       );
-      
-      if (response['success'] == true) {
-        return {
-          'success': true,
-          'data': TransactionModel.fromJson(response['data']['data']),
-        };
-      } else {
-        return {
-          'success': false,
-          'message': response['message'] ?? 'Failed to update transaction',
-        };
+
+      if (response.success && response.data != null) {
+        return AppResponse<TransactionModel>(
+          success: true,
+          data: TransactionModel.fromJson(response.data!['data']),
+        );
       }
+      
+      return AppResponse<TransactionModel>(
+        success: false,
+        message: response.message ?? 'Gagal mengambil data transaksi',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
+      _logger.e('Get transaction by id error: $e');
+      return AppResponse<TransactionModel>(
+        success: false,
+        message: 'Terjadi kesalahan saat mengambil data transaksi',
+      );
     }
   }
 
-  Future<Map<String, dynamic>> deleteTransaction(int id) async {
+  Future<AppResponse<TransactionModel>> createTransaction(TransactionModel transaction) async {
     try {
-      final response = await _apiService.delete('${ApiUrl.transactionById}$id');
-      
-      if (response['success'] == true) {
-        return {'success': true};
-      } else {
-        return {
-          'success': false,
-          'message': response['message'] ?? 'Failed to delete transaction',
-        };
+      final response = await _apiService.post<Map<String, dynamic>>(
+        ApiUrl.transactions, 
+        data: transaction.toJson(),
+        fromJsonT: (json) => json as Map<String, dynamic>,
+      );
+
+      if (response.success && response.data != null) {
+        return AppResponse<TransactionModel>(
+          success: true,
+          data: TransactionModel.fromJson(response.data!['data']),
+        );
       }
+      
+      return AppResponse<TransactionModel>(
+        success: false,
+        message: response.message ?? 'Gagal membuat transaksi',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
+      _logger.e('Create transaction error: $e');
+      return AppResponse<TransactionModel>(
+        success: false,
+        message: 'Terjadi kesalahan saat membuat transaksi',
+      );
+    }
+  }
+
+  Future<AppResponse<TransactionModel>> updateTransaction(TransactionModel transaction) async {
+    try {
+      final response = await _apiService.put<Map<String, dynamic>>(
+        '${ApiUrl.transactionById}${transaction.id}', 
+        data: transaction.toJson(),
+        fromJsonT: (json) => json as Map<String, dynamic>,
+      );
+
+      if (response.success && response.data != null) {
+        return AppResponse<TransactionModel>(
+          success: true,
+          data: TransactionModel.fromJson(response.data!['data']),
+        );
+      }
+      
+      return AppResponse<TransactionModel>(
+        success: false,
+        message: response.message ?? 'Gagal memperbarui transaksi',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      _logger.e('Update transaction error: $e');
+      return AppResponse<TransactionModel>(
+        success: false,
+        message: 'Terjadi kesalahan saat memperbarui transaksi',
+      );
+    }
+  }
+
+  Future<AppResponse<void>> deleteTransaction(int id) async {
+    try {
+      final response = await _apiService.delete<Map<String, dynamic>>(
+        '${ApiUrl.transactionById}$id',
+        fromJsonT: (json) => json as Map<String, dynamic>,
+      );
+
+      if (response.success) {
+        return AppResponse<void>(success: true);
+      }
+      
+      return AppResponse<void>(
+        success: false,
+        message: response.message ?? 'Gagal menghapus transaksi',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      _logger.e('Delete transaction error: $e');
+      return AppResponse<void>(
+        success: false,
+        message: 'Terjadi kesalahan saat menghapus transaksi',
+      );
     }
   }
 }

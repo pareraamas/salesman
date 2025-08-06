@@ -1,11 +1,11 @@
-import 'package:get/get.dart';
 import 'package:logger/logger.dart';
+import 'package:salesman_mobile/app/data/models/app_response.dart';
 import 'package:salesman_mobile/app/data/models/product_model.dart';
 import 'package:salesman_mobile/app/data/sources/api_service.dart';
 import 'package:salesman_mobile/app/core/api_url.dart';
 
-class ProductRepository extends GetxService {
-  final ApiService _apiService = Get.find<ApiService>();
+class ProductRepository {
+  final ApiService _apiService;
   final _logger = Logger(
     printer: PrettyPrinter(
       methodCount: 0,
@@ -16,144 +16,169 @@ class ProductRepository extends GetxService {
     ),
   );
 
+  ProductRepository({required ApiService api}) : _apiService = api;
+
   /// Get list of products with pagination and search
-  Future<Map<String, dynamic>> getProducts({
+  Future<AppResponse<Map<String, dynamic>>> getProducts({
     int? page, 
     int? limit, 
     String? search,
     int? storeId,
   }) async {
     try {
-      final response = await _apiService.get(
+      final response = await _apiService.get<Map<String, dynamic>>(
         ApiUrl.products,
         queryParameters: {
           'page': page,
           'limit': limit,
           'search': search,
-        },
+          'store_id': storeId,
+        }..removeWhere((key, value) => value == null),
+        fromJsonT: (json) => json as Map<String, dynamic>,
       );
       
-      if (response['success'] == true) {
-        final responseData = response['data'] is Map ? response['data'] : response;
-        final dataList = responseData['data'] is List ? responseData['data'] : [];
-        
+      if (response.success && response.data != null) {
+        final dataList = response.data!['data'] is List ? response.data!['data'] : [];
         final products = (dataList as List)
             .map((product) => ProductModel.fromJson(product))
             .toList();
         
-        return {
-          'success': true,
-          'data': products,
-          'pagination': responseData['meta'] ?? {},
-        };
-      } else {
-        return {
-          'success': false,
-          'message': response['message'] ?? 'Gagal memuat data produk',
-          'errors': response['errors'],
-        };
+        return AppResponse<Map<String, dynamic>>(
+          success: true,
+          data: {
+            'products': products,
+            'pagination': response.data!['meta'] ?? {},
+          },
+        );
       }
+      
+      return AppResponse<Map<String, dynamic>>(
+        success: false,
+        message: response.message ?? 'Gagal memuat data produk',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
       _logger.e('Get products error: $e');
-      return {
-        'success': false,
-        'message': 'Terjadi kesalahan saat memuat data produk',
-      };
+      return AppResponse<Map<String, dynamic>>(
+        success: false,
+        message: 'Terjadi kesalahan saat memuat data produk',
+      );
     }
   }
 
-  Future<Map<String, dynamic>> getProductById(int id) async {
+  Future<AppResponse<ProductModel>> getProductById(int id) async {
     try {
-      final response = await _apiService.get('${ApiUrl.productById}$id');
+      final response = await _apiService.get<Map<String, dynamic>>(
+        '${ApiUrl.productById}$id',
+        fromJsonT: (json) => json as Map<String, dynamic>,
+      );
       
-      if (response['success'] == true) {
-        return {
-          'success': true,
-          'data': ProductModel.fromJson(response['data']['data']),
-        };
-      } else {
-        return {
-          'success': false,
-          'message': response['message'] ?? 'Failed to fetch product',
-        };
+      if (response.success && response.data != null) {
+        return AppResponse<ProductModel>(
+          success: true,
+          data: ProductModel.fromJson(response.data!['data']),
+        );
       }
+      
+      return AppResponse<ProductModel>(
+        success: false,
+        message: response.message ?? 'Gagal mengambil data produk',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
+      _logger.e('Get product by id error: $e');
+      return AppResponse<ProductModel>(
+        success: false,
+        message: 'Terjadi kesalahan saat mengambil data produk',
+      );
     }
   }
 
-  Future<Map<String, dynamic>> createProduct(ProductModel product) async {
+  Future<AppResponse<ProductModel>> createProduct(ProductModel product) async {
     try {
-      final response = await _apiService.post(
+      final response = await _apiService.post<Map<String, dynamic>>(
         ApiUrl.products,
         data: product.toJson(),
+        fromJsonT: (json) => json as Map<String, dynamic>,
       );
       
-      if (response['success'] == true) {
-        return {
-          'success': true,
-          'data': ProductModel.fromJson(response['data']['data']),
-        };
-      } else {
-        return {
-          'success': false,
-          'message': response['message'] ?? 'Failed to create product',
-        };
+      if (response.success && response.data != null) {
+        return AppResponse<ProductModel>(
+          success: true,
+          data: ProductModel.fromJson(response.data!['data']),
+        );
       }
+      
+      return AppResponse<ProductModel>(
+        success: false,
+        message: response.message ?? 'Gagal membuat produk',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
+      _logger.e('Create product error: $e');
+      return AppResponse<ProductModel>(
+        success: false,
+        message: 'Terjadi kesalahan saat membuat produk',
+      );
     }
   }
 
-  Future<Map<String, dynamic>> updateProduct(ProductModel product) async {
+  Future<AppResponse<ProductModel>> updateProduct(ProductModel product) async {
     try {
-      final response = await _apiService.put(
+      final response = await _apiService.put<Map<String, dynamic>>(
         '${ApiUrl.productById}${product.id}',
         data: product.toJson(),
+        fromJsonT: (json) => json as Map<String, dynamic>,
       );
       
-      if (response['success'] == true) {
-        return {
-          'success': true,
-          'data': ProductModel.fromJson(response['data']['data']),
-        };
-      } else {
-        return {
-          'success': false,
-          'message': response['message'] ?? 'Failed to update product',
-        };
+      if (response.success && response.data != null) {
+        return AppResponse<ProductModel>(
+          success: true,
+          data: ProductModel.fromJson(response.data!['data']),
+        );
       }
+      
+      return AppResponse<ProductModel>(
+        success: false,
+        message: response.message ?? 'Gagal memperbarui produk',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
+      _logger.e('Update product error: $e');
+      return AppResponse<ProductModel>(
+        success: false,
+        message: 'Terjadi kesalahan saat memperbarui produk',
+      );
     }
   }
 
-  Future<Map<String, dynamic>> deleteProduct(int id) async {
+  Future<AppResponse<void>> deleteProduct(int id) async {
     try {
-      final response = await _apiService.delete('${ApiUrl.productById}$id');
+      final response = await _apiService.delete<Map<String, dynamic>>(
+        '${ApiUrl.productById}$id',
+        fromJsonT: (json) => json as Map<String, dynamic>,
+      );
       
-      if (response['success'] == true) {
-        return {'success': true};
-      } else {
-        return {
-          'success': false,
-          'message': response['message'] ?? 'Failed to delete product',
-        };
+      if (response.success) {
+        return AppResponse<void>(success: true);
       }
+      
+      return AppResponse<void>(
+        success: false,
+        message: response.message ?? 'Gagal menghapus produk',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
     } catch (e) {
-      return {
-        'success': false,
-        'message': e.toString(),
-      };
+      _logger.e('Delete product error: $e');
+      return AppResponse<void>(
+        success: false,
+        message: 'Terjadi kesalahan saat menghapus produk',
+      );
     }
   }
 }
