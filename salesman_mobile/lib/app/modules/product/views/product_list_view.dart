@@ -12,6 +12,18 @@ class ProductListView extends GetView<ProductController> {
       appBar: AppBar(
         title: const Text('Daftar Produk'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => Get.toNamed(Routes.PRODUCT_CREATE),
+            tooltip: 'Tambah Produk',
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Get.toNamed(Routes.PRODUCT_CREATE),
+        backgroundColor: Theme.of(context).primaryColor,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
       body: RefreshIndicator(
         onRefresh: controller.refreshProducts,
@@ -95,14 +107,6 @@ class ProductListView extends GetView<ProductController> {
             },
           );
         }),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Navigate to add product
-          // Navigate to add product
-          Get.toNamed('${Routes.PRODUCTS}/add');
-        },
-        child: const Icon(Icons.add),
       ),
     );
   }

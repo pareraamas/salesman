@@ -16,6 +16,7 @@ abstract class Routes {
   static const STORES = _Paths.STORES;
   static const STORE_DETAIL = _Paths.STORE_DETAIL;
   static const PRODUCTS = _Paths.PRODUCTS;
+  static const PRODUCT_CREATE = _Paths.PRODUCT_CREATE;
   static const PRODUCT_DETAIL = _Paths.PRODUCT_DETAIL;
   static const CONSIGNMENTS = _Paths.CONSIGNMENTS;
   static const CONSIGNMENT_DETAIL = _Paths.CONSIGNMENT_DETAIL;
@@ -40,6 +41,7 @@ abstract class _Paths {
   static const STORES = '/stores';
   static const STORE_DETAIL = '/stores/:id';
   static const PRODUCTS = '/products';
+  static const PRODUCT_CREATE = '/product-create';
   static const PRODUCT_DETAIL = '/products/:id';
   static const CONSIGNMENTS = '/consignments';
   static const CONSIGNMENT_DETAIL = '/consignments/:id';

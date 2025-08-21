@@ -7,8 +7,8 @@ use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Infolists\Components;
 use Filament\Infolists\Infolist;
-use Filament\Infolists\Component\TextEntry;
-use Filament\Infolists\Component\Section as InfoSection;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\Section as InfoSection;
 
 class ViewStore extends ViewRecord
 {
@@ -38,7 +38,7 @@ class ViewStore extends ViewRecord
                                             ->label('')
                                             ->grow(false)
                                             ->circular()
-                                            ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->name) . '&color=FFFFFF&background=111827&size=256')
+                                            ->defaultImageUrl(fn($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->name) . '&color=FFFFFF&background=111827&size=256')
                                             ->columnSpan(1),
                                     ]),
                                     Components\Group::make([
@@ -63,7 +63,7 @@ class ViewStore extends ViewRecord
                                     ->markdown(),
                                 Components\TextEntry::make('latitude')
                                     ->label('Koordinat')
-                                    ->formatStateUsing(fn ($record) => $record->latitude . ', ' . $record->longitude)
+                                    ->formatStateUsing(fn($record) => $record->latitude . ', ' . $record->longitude)
                                     ->icon('heroicon-m-map-pin'),
                             ]),
                     ]),

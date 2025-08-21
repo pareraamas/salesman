@@ -7,9 +7,9 @@ use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Infolists\Components;
 use Filament\Infolists\Infolist;
-use Filament\Infolists\Component\TextEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\Section;
-use Filament\Infolists\Component\Section as InfoSection;
+
 
 class ViewProduct extends ViewRecord
 {
