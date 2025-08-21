@@ -8,6 +8,7 @@ use Filament\Resources\Pages\ViewRecord;
 use Filament\Infolists\Components;
 use Filament\Infolists\Infolist;
 use Filament\Infolists\Component\TextEntry;
+use Filament\Infolists\Components\Section;
 use Filament\Infolists\Component\Section as InfoSection;
 
 class ViewProduct extends ViewRecord
@@ -38,13 +39,13 @@ class ViewProduct extends ViewRecord
                                             ->label('')
                                             ->grow(false)
                                             ->circular()
-                                            ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->name) . '&color=FFFFFF&background=111827&size=256')
+                                            ->defaultImageUrl(fn($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->name) . '&color=FFFFFF&background=111827&size=256')
                                             ->columnSpan(1),
                                     ]),
                                     Components\Group::make([
                                         Components\TextEntry::make('name')
                                             ->label('Nama Produk')
-                                            ->size(TextEntry\TextEntrySize::Large)
+
                                             ->weight('font-bold'),
                                         Components\TextEntry::make('code')
                                             ->label('Kode Produk')
@@ -53,13 +54,13 @@ class ViewProduct extends ViewRecord
                                         Components\TextEntry::make('price')
                                             ->label('Harga')
                                             ->money('IDR', locale: 'id')
-                                            ->size(TextEntry\TextEntrySize::Large)
+
                                             ->weight('font-bold')
                                             ->color('success'),
                                     ])->columnSpan(1),
                                 ]),
                         ]),
-                        InfoSection::make('Detail')
+                        Section::make('Detail')
                             ->schema([
                                 Components\TextEntry::make('description')
                                     ->label('Deskripsi')
