@@ -163,23 +163,21 @@ class StoreController extends BaseController
 
             $stores = $query->latest()->paginate($perPage);
             
-            // Format the paginated response data
-            $responseData = [
-                'items' => $stores->items(),
-                'pagination' => [
-                    'total' => $stores->total(),
-                    'per_page' => $stores->perPage(),
-                    'current_page' => $stores->currentPage(),
-                    'last_page' => $stores->lastPage(),
-                    'from' => $stores->firstItem(),
-                    'to' => $stores->lastItem(),
-                ]
+            // Format the paginated response data to match ProductController format
+            $meta = [
+                'current_page' => $stores->currentPage(),
+                'total' => $stores->total(),
+                'per_page' => $stores->perPage(),
+                'last_page' => $stores->lastPage(),
+                'from' => $stores->firstItem(),
+                'to' => $stores->lastItem()
             ];
 
             return $this->sendResponse(
-                $responseData,
+                $stores->items(),
                 'Daftar toko berhasil diambil',
-                HttpResponse::HTTP_OK
+                HttpResponse::HTTP_OK,
+                $meta
             );
             
         } catch (\Exception $e) {
