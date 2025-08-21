@@ -9,7 +9,7 @@ import 'local_service.dart';
 // Re-export Dio types for easier access
 
 class ApiService {
-  static const String _baseUrlKey = 'BASE_URL';
+  static const String _baseUrlKey = 'API_URL';
   static const int _defaultTimeoutSeconds = 30;
   static const int _receiveTimeoutSeconds = 30;
   static const int _sendTimeoutSeconds = 30;
@@ -177,27 +177,19 @@ class ApiService {
   // Helper method to handle error responses
   AppResponse<T> _handleError<T>(DioException e) {
     _logger.e('API Error: ${e.message}');
-    
+
     if (e.response != null) {
       _logger.e('Response data: ${e.response?.data}');
       _logger.e('Status code: ${e.response?.statusCode}');
-      
+
       return AppResponse<T>(
         success: false,
-        message: e.response?.data is Map 
-          ? (e.response?.data as Map)['message']?.toString() 
-          : 'An error occurred',
+        message: e.response?.data is Map ? (e.response?.data as Map)['message']?.toString() : 'An error occurred',
         statusCode: e.response?.statusCode,
-        errors: e.response?.data is Map 
-          ? (e.response?.data as Map)['errors'] as Map<String, dynamic>?
-          : null,
+        errors: e.response?.data is Map ? (e.response?.data as Map)['errors'] as Map<String, dynamic>? : null,
       );
     } else {
-      return AppResponse<T>(
-        success: false,
-        message: e.message ?? 'An unexpected error occurred',
-        statusCode: 500,
-      );
+      return AppResponse<T>(success: false, message: e.message ?? 'An unexpected error occurred', statusCode: 500);
     }
   }
 
@@ -211,18 +203,9 @@ class ApiService {
     T Function(dynamic json)? fromJsonT,
   }) async {
     try {
-      final response = await _dio.get(
-        path,
-        queryParameters: queryParameters,
-        options: options,
-        cancelToken: cancelToken,
-        onReceiveProgress: onReceiveProgress,
-      );
+      final response = await _dio.get(path, queryParameters: queryParameters, options: options, cancelToken: cancelToken, onReceiveProgress: onReceiveProgress);
 
-      return AppResponse<T>.fromJson(
-        response.data is Map ? response.data as Map<String, dynamic> : {'data': response.data},
-        fromJsonT: fromJsonT,
-      );
+      return AppResponse<T>.fromJson(response.data is Map ? response.data as Map<String, dynamic> : {'data': response.data}, fromJsonT: fromJsonT);
     } on DioException catch (e) {
       return _handleError(e);
     }
@@ -249,10 +232,7 @@ class ApiService {
         onReceiveProgress: onReceiveProgress,
       );
 
-      return AppResponse<T>.fromJson(
-        response.data is Map ? response.data as Map<String, dynamic> : {'data': response.data},
-        fromJsonT: fromJsonT,
-      );
+      return AppResponse<T>.fromJson(response.data is Map ? response.data as Map<String, dynamic> : {'data': response.data}, fromJsonT: fromJsonT);
     } on DioException catch (e) {
       return _handleError(e);
     }
@@ -279,10 +259,7 @@ class ApiService {
         onReceiveProgress: onReceiveProgress,
       );
 
-      return AppResponse<T>.fromJson(
-        response.data is Map ? response.data as Map<String, dynamic> : {'data': response.data},
-        fromJsonT: fromJsonT,
-      );
+      return AppResponse<T>.fromJson(response.data is Map ? response.data as Map<String, dynamic> : {'data': response.data}, fromJsonT: fromJsonT);
     } on DioException catch (e) {
       return _handleError(e);
     }
@@ -297,18 +274,9 @@ class ApiService {
     T Function(dynamic json)? fromJsonT,
   }) async {
     try {
-      final response = await _dio.delete(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-        cancelToken: cancelToken,
-      );
+      final response = await _dio.delete(path, data: data, queryParameters: queryParameters, options: options, cancelToken: cancelToken);
 
-      return AppResponse<T>.fromJson(
-        response.data is Map ? response.data as Map<String, dynamic> : {'data': response.data},
-        fromJsonT: fromJsonT,
-      );
+      return AppResponse<T>.fromJson(response.data is Map ? response.data as Map<String, dynamic> : {'data': response.data}, fromJsonT: fromJsonT);
     } on DioException catch (e) {
       return _handleError(e);
     }
@@ -335,10 +303,7 @@ class ApiService {
         onReceiveProgress: onReceiveProgress,
       );
 
-      return AppResponse<T>.fromJson(
-        response.data is Map ? response.data as Map<String, dynamic> : {'data': response.data},
-        fromJsonT: fromJsonT,
-      );
+      return AppResponse<T>.fromJson(response.data is Map ? response.data as Map<String, dynamic> : {'data': response.data}, fromJsonT: fromJsonT);
     } on DioException catch (e) {
       return _handleError(e);
     }
@@ -369,10 +334,7 @@ class ApiService {
         options: options,
       );
 
-      return AppResponse(
-        success: true,
-        statusCode: response.statusCode,
-      );
+      return AppResponse(success: true, statusCode: response.statusCode);
     } on DioException catch (e) {
       return _handleError(e);
     }
@@ -402,25 +364,17 @@ class ApiService {
 
       final responseData = response.data;
       T? parsedData;
-      
+
       if (fromJsonT != null && responseData != null) {
         try {
           parsedData = fromJsonT(responseData);
         } catch (e) {
           _logger.e('Error parsing response data: $e');
-          return AppResponse<T>(
-            success: false,
-            message: 'Error parsing response data',
-            statusCode: response.statusCode,
-          );
+          return AppResponse<T>(success: false, message: 'Error parsing response data', statusCode: response.statusCode);
         }
       }
 
-      return AppResponse<T>(
-        success: true,
-        data: parsedData,
-        statusCode: response.statusCode,
-      );
+      return AppResponse<T>(success: true, data: parsedData, statusCode: response.statusCode);
     } on DioException catch (e) {
       return _handleError(e);
     }

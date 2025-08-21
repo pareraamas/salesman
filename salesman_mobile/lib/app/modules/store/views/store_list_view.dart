@@ -12,10 +12,7 @@ class StoreListView extends GetView<StoreController> {
         title: const Text('Daftar Toko'),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () => _showSearchDialog(context),
-          ),
+          IconButton(icon: const Icon(Icons.search), onPressed: () => _showSearchDialog(context)),
           IconButton(
             icon: const Icon(Icons.map_outlined),
             onPressed: () {
@@ -44,17 +41,11 @@ class StoreListView extends GetView<StoreController> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    'Terjadi kesalahan',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+                  Text('Terjadi kesalahan', style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 8),
                   Text(controller.errorMessage.value),
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => controller.fetchStores(),
-                    child: const Text('Coba Lagi'),
-                  ),
+                  ElevatedButton(onPressed: () => controller.fetchStores(), child: const Text('Coba Lagi')),
                 ],
               ),
             );
@@ -77,18 +68,60 @@ class StoreListView extends GetView<StoreController> {
               }
 
               final store = controller.stores[index];
+              print(store.getFullPhotoUrl);
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  title: Text(store.name),
-                  subtitle: Text(store.address),
-                  trailing: const Icon(Icons.chevron_right),
+                child: InkWell(
                   onTap: () {
-                    Get.toNamed(
-                      '/stores/${store.id}',
-                      arguments: store.toJson(),
-                    );
+                    Get.toNamed('/stores/${store.id}', arguments: store.toJson());
                   },
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        if (store.photoUrl != null)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              store.getFullPhotoUrl ?? '',
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => const Icon(Icons.store, size: 80, color: Colors.grey),
+                            ),
+                          )
+                        else
+                          const Icon(Icons.store, size: 80, color: Colors.grey),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(store.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              if (store.ownerName != null && store.ownerName!.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                  child: Text('Pemilik: ${store.ownerName}', style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                                ),
+                              Text(store.address, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14)),
+                              if (store.phone != null && store.phone!.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4.0),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.phone, size: 16, color: Colors.grey),
+                                      const SizedBox(width: 4),
+                                      Text(store.phone!, style: const TextStyle(fontSize: 14, color: Colors.blue)),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right, color: Colors.grey),
+                      ],
+                    ),
+                  ),
                 ),
               );
             },
@@ -105,10 +138,7 @@ class StoreListView extends GetView<StoreController> {
         title: const Text('Cari Toko'),
         content: TextField(
           autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Nama toko...',
-            border: OutlineInputBorder(),
-          ),
+          decoration: const InputDecoration(hintText: 'Nama toko...', border: OutlineInputBorder()),
           onChanged: (value) => controller.searchStores(value),
         ),
         actions: [
@@ -119,10 +149,7 @@ class StoreListView extends GetView<StoreController> {
             },
             child: const Text('Reset'),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Tutup'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup')),
         ],
       ),
     );

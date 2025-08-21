@@ -69,12 +69,12 @@ class ProductCreateView extends GetView<ProductController> {
               ),
               const SizedBox(height: 16),
               
-              // SKU
+              // Kode
               CustomTextField(
-                controller: controller.skuController,
-                label: 'SKU *',
-                hint: 'Masukkan kode SKU',
-                validator: controller.validateSku,
+                controller: controller.codeController,
+                label: 'Kode Produk *',
+                hint: 'Masukkan kode produk',
+                validator: controller.validateCode,
               ),
               const SizedBox(height: 16),
               
@@ -86,16 +86,6 @@ class ProductCreateView extends GetView<ProductController> {
                 keyboardType: TextInputType.number,
                 prefixText: 'Rp ',
                 validator: controller.validatePrice,
-              ),
-              const SizedBox(height: 16),
-              
-              // Stock
-              CustomTextField(
-                controller: controller.stockController,
-                label: 'Stok *',
-                hint: 'Masukkan jumlah stok',
-                keyboardType: TextInputType.number,
-                validator: controller.validateStock,
               ),
               const SizedBox(height: 16),
               

@@ -9,24 +9,26 @@ part of 'product_model.dart';
 ProductModel _$ProductModelFromJson(Map<String, dynamic> json) => ProductModel(
   id: (json['id'] as num).toInt(),
   name: json['name'] as String,
-  sku: json['sku'] as String,
+  code: json['code'] as String,
+  price: json['price'] as String,
   description: json['description'] as String?,
-  price: (json['price'] as num).toDouble(),
-  stock: (json['stock'] as num).toInt(),
-  imageUrl: json['imageUrl'] as String?,
-  createdAt: json['createdAt'] as String?,
-  updatedAt: json['updatedAt'] as String?,
+  photoPath: json['photo_path'] as String?,
+  photoUrl: json['photo_url'] as String?,
+  createdAt: json['created_at'] as String?,
+  updatedAt: json['updated_at'] as String?,
+  deletedAt: json['deleted_at'] as String?,
 );
 
 Map<String, dynamic> _$ProductModelToJson(ProductModel instance) =>
     <String, dynamic>{
       'id': instance.id,
       'name': instance.name,
-      'sku': instance.sku,
-      'description': instance.description,
+      'code': instance.code,
       'price': instance.price,
-      'stock': instance.stock,
-      'imageUrl': instance.imageUrl,
-      'createdAt': instance.createdAt,
-      'updatedAt': instance.updatedAt,
+      'description': instance.description,
+      'photo_path': instance.photoPath,
+      'photo_url': instance.photoUrl,
+      'created_at': instance.createdAt,
+      'updated_at': instance.updatedAt,
+      'deleted_at': instance.deletedAt,
     };

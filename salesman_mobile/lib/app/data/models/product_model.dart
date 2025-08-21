@@ -1,3 +1,4 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'product_model.g.dart';
@@ -6,28 +7,31 @@ part 'product_model.g.dart';
 class ProductModel {
   final int id;
   final String name;
-  final String sku;
+  final String code;
+  final String price;
   final String? description;
-  final double price;
-  final int stock;
-  final String? imageUrl;
+  final String? photoPath;
+  final String? photoUrl;
   final String? createdAt;
   final String? updatedAt;
+  final String? deletedAt;
 
-  ProductModel({
+  const ProductModel({
     required this.id,
     required this.name,
-    required this.sku,
-    this.description,
+    required this.code,
     required this.price,
-    required this.stock,
-    this.imageUrl,
+    this.description,
+    this.photoPath,
+    this.photoUrl,
     this.createdAt,
     this.updatedAt,
+    this.deletedAt,
   });
 
-  factory ProductModel.fromJson(Map<String, dynamic> json) => 
-      _$ProductModelFromJson(json);
-  
+  factory ProductModel.fromJson(Map<String, dynamic> json) => _$ProductModelFromJson(json);
+
   Map<String, dynamic> toJson() => _$ProductModelToJson(this);
+
+  String? get getFullPhotoUrl => photoUrl != null ? '${dotenv.env['BASE_URL']}$photoUrl' : null;
 }

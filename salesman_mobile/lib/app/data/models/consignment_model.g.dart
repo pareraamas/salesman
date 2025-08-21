@@ -9,11 +9,11 @@ part of 'consignment_model.dart';
 ConsignmentModel _$ConsignmentModelFromJson(Map<String, dynamic> json) =>
     ConsignmentModel(
       id: (json['id'] as num).toInt(),
-      storeId: (json['storeId'] as num).toInt(),
-      productId: (json['productId'] as num).toInt(),
+      storeId: (json['store_id'] as num).toInt(),
+      productId: (json['product_id'] as num).toInt(),
       quantity: (json['quantity'] as num).toInt(),
-      soldQuantity: (json['soldQuantity'] as num?)?.toInt(),
-      returnedQuantity: (json['returnedQuantity'] as num?)?.toInt(),
+      soldQuantity: (json['sold_quantity'] as num?)?.toInt(),
+      returnedQuantity: (json['returned_quantity'] as num?)?.toInt(),
       status: json['status'] as String,
       notes: json['notes'] as String?,
       store: json['store'] == null
@@ -25,23 +25,23 @@ ConsignmentModel _$ConsignmentModelFromJson(Map<String, dynamic> json) =>
       user: json['user'] == null
           ? null
           : UserModel.fromJson(json['user'] as Map<String, dynamic>),
-      createdAt: json['createdAt'] as String?,
-      updatedAt: json['updatedAt'] as String?,
+      createdAt: json['created_at'] as String?,
+      updatedAt: json['updated_at'] as String?,
     );
 
 Map<String, dynamic> _$ConsignmentModelToJson(ConsignmentModel instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'storeId': instance.storeId,
-      'productId': instance.productId,
+      'store_id': instance.storeId,
+      'product_id': instance.productId,
       'quantity': instance.quantity,
-      'soldQuantity': instance.soldQuantity,
-      'returnedQuantity': instance.returnedQuantity,
+      'sold_quantity': instance.soldQuantity,
+      'returned_quantity': instance.returnedQuantity,
       'status': instance.status,
       'notes': instance.notes,
-      'store': instance.store,
-      'product': instance.product,
-      'user': instance.user,
-      'createdAt': instance.createdAt,
-      'updatedAt': instance.updatedAt,
+      'store': instance.store?.toJson(),
+      'product': instance.product?.toJson(),
+      'user': instance.user?.toJson(),
+      'created_at': instance.createdAt,
+      'updated_at': instance.updatedAt,
     };

@@ -129,7 +129,7 @@ class StoreController extends BaseController
             $stores = Store::select('id', 'name')
                 ->orderBy('name')
                 ->get();
-                
+
             return $this->sendResponse(
                 $stores,
                 'Daftar toko berhasil diambil',
@@ -138,8 +138,8 @@ class StoreController extends BaseController
         } catch (\Exception $e) {
             Log::error('Error fetching stores list: ' . $e->getMessage());
             return $this->sendError(
-                'Gagal mengambil daftar toko',
-                null,
+                'Gagal mengambil daftar toko (BE)',
+                $e->getMessage(),
                 HttpResponse::HTTP_INTERNAL_SERVER_ERROR
             );
         }
@@ -154,37 +154,25 @@ class StoreController extends BaseController
             $query = Store::query();
 
             if ($search) {
-                $query->where(function($q) use ($search) {
+                $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('owner_name', 'like', "%{$search}%")
-                      ->orWhere('phone', 'like', "%{$search}%");
+                        ->orWhere('owner_name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
                 });
             }
 
             $stores = $query->latest()->paginate($perPage);
-            
-            // Format the paginated response data to match ProductController format
-            $meta = [
-                'current_page' => $stores->currentPage(),
-                'total' => $stores->total(),
-                'per_page' => $stores->perPage(),
-                'last_page' => $stores->lastPage(),
-                'from' => $stores->firstItem(),
-                'to' => $stores->lastItem()
-            ];
 
             return $this->sendResponse(
-                $stores->items(),
-                'Daftar toko berhasil diambil',
-                HttpResponse::HTTP_OK,
-                $meta
+                $stores,
+                'Daftar toko berhasil diambil (BE)',
+                HttpResponse::HTTP_OK
             );
-            
         } catch (\Exception $e) {
             Log::error('Error fetching stores: ' . $e->getMessage());
             return $this->sendError(
-                'Gagal mengambil daftar toko',
-                null,
+                'Gagal mengambil daftar toko (BE)',
+                $e->getMessage(),
                 HttpResponse::HTTP_INTERNAL_SERVER_ERROR
             );
         }
@@ -364,7 +352,7 @@ class StoreController extends BaseController
             }
 
             $store = Store::create($data);
-            
+
             // Format the response data
             $responseData = [
                 'id' => $store->id,
@@ -382,7 +370,6 @@ class StoreController extends BaseController
                 'Toko berhasil dibuat',
                 HttpResponse::HTTP_CREATED
             );
-            
         } catch (\Exception $e) {
             Log::error('Error creating store: ' . $e->getMessage());
             return $this->sendError(
@@ -444,7 +431,6 @@ class StoreController extends BaseController
                 'Detail toko berhasil diambil',
                 HttpResponse::HTTP_OK
             );
-            
         } catch (\Exception $e) {
             Log::error('Error fetching store details: ' . $e->getMessage());
             return $this->sendError(
@@ -576,7 +562,7 @@ class StoreController extends BaseController
             }
 
             $store->update($data);
-            
+
             // Format the response data
             $responseData = [
                 'id' => $store->id,
@@ -594,7 +580,6 @@ class StoreController extends BaseController
                 'Toko berhasil diperbarui',
                 HttpResponse::HTTP_OK
             );
-            
         } catch (\Exception $e) {
             Log::error('Error updating store: ' . $e->getMessage());
             return $this->sendError(
@@ -692,7 +677,7 @@ class StoreController extends BaseController
             }
 
             // Check if store has related transactions
-            $hasTransactions = Transaction::whereHas('consignment', function($q) use ($store) {
+            $hasTransactions = Transaction::whereHas('consignment', function ($q) use ($store) {
                 $q->where('store_id', $store->id);
             })->exists();
 
@@ -716,7 +701,6 @@ class StoreController extends BaseController
                 'Toko berhasil dihapus',
                 HttpResponse::HTTP_OK
             );
-            
         } catch (\Exception $e) {
             Log::error('Error deleting store: ' . $e->getMessage());
             return $this->sendError(

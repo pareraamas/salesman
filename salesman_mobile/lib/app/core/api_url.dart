@@ -2,7 +2,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiUrl {
   // Base URL from environment variable
-  static String get baseUrl => dotenv.get('BASE_URL', fallback: 'http://localhost:8000/api');
+  static String get baseUrl => dotenv.get('API_URL', fallback: 'http://localhost:8000/api');
 
   // Auth Endpoints
   static const String login = '/login';

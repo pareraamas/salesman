@@ -17,10 +17,9 @@ class ProductController extends GetxController {
   
   // Form controllers
   final nameController = TextEditingController();
-  final skuController = TextEditingController();
+  final codeController = TextEditingController();
   final descriptionController = TextEditingController();
   final priceController = TextEditingController();
-  final stockController = TextEditingController();
   final formKey = GlobalKey<FormState>();
 
   // Constructor with dependency injection
@@ -30,10 +29,9 @@ class ProductController extends GetxController {
   @override
   void onClose() {
     nameController.dispose();
-    skuController.dispose();
+    codeController.dispose();
     descriptionController.dispose();
     priceController.dispose();
-    stockController.dispose();
     super.onClose();
   }
   
@@ -108,27 +106,24 @@ class ProductController extends GetxController {
         .error;
   }
 
-  String? validateSku(String? value) {
-    return FieldValidator.text(value ?? '', label: 'SKU')
+  String? validateCode(String? value) {
+    return FieldValidator.text(value ?? '', label: 'Kode produk')
         .required()
-        .minLength(3, message: 'SKU minimal 3 karakter')
+        .minLength(2, message: 'Kode produk minimal 2 karakter')
         .error;
   }
 
   String? validatePrice(String? value) {
-    final numericValue = value?.replaceAll(RegExp(r'[^0-9]'), '') ?? '0';
-    return FieldValidator.number(numericValue, label: 'Harga')
-        .requiredNumber()
-        .minValue(1, message: 'Harga harus lebih dari 0')
-        .error;
+    if (value == null || value.isEmpty) {
+      return 'Harga tidak boleh kosong';
+    }
+    final price = double.tryParse(value.replaceAll(RegExp(r'[^0-9]'), ''));
+    if (price == null || price <= 0) {
+      return 'Masukkan harga yang valid';
+    }
+    return null;
   }
 
-  String? validateStock(String? value) {
-    return FieldValidator.number(value ?? '0', label: 'Stok')
-        .requiredNumber()
-        .minValue(0, message: 'Stok tidak boleh kurang dari 0')
-        .error;
-  }
 
   // Create a new product from form data
   Future<void> submitProductForm() async {
@@ -140,12 +135,16 @@ class ProductController extends GetxController {
       final product = ProductModel(
         id: 0, // Will be set by the server
         name: nameController.text.trim(),
-        sku: skuController.text.trim(),
+        code: codeController.text.trim(),
+        price: double.parse(priceController.text.replaceAll(RegExp(r'[^0-9]'), '')).toString(),
         description: descriptionController.text.trim().isNotEmpty 
             ? descriptionController.text.trim() 
             : null,
-        price: double.parse(priceController.text.replaceAll(RegExp(r'[^0-9]'), '')),
-        stock: int.parse(stockController.text),
+        photoPath: null,
+        photoUrl: null,
+        createdAt: DateTime.now().toIso8601String(),
+        updatedAt: DateTime.now().toIso8601String(),
+        deletedAt: null,
       );
 
       final response = await _productRepository.createProduct(product);

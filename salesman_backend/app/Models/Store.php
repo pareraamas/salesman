@@ -53,8 +53,8 @@ class Store extends Model
      *
      * @return string|null
      */
-    // public function getPhotoUrlAttribute()
-    // {
-    //     return $this->photo_path ? Storage::disk('public')->url($this->photo_path) : null;
-    // }
+    public function getPhotoUrlAttribute()
+    {
+        return $this->photo_path ? Storage::disk('public')->url($this->photo_path) : null;
+    }
 }

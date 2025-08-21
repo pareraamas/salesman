@@ -127,13 +127,12 @@ class ProductController extends BaseController
             $products = Product::select('id', 'name', 'code')
                 ->orderBy('name')
                 ->get();
-                
+
             return $this->sendResponse(
                 $products,
                 'Daftar produk berhasil diambil',
                 HttpResponse::HTTP_OK
             );
-            
         } catch (\Exception $e) {
             Log::error('Error getting product list: ' . $e->getMessage());
             return $this->sendError(
@@ -153,10 +152,10 @@ class ProductController extends BaseController
             $query = Product::query();
 
             if ($search) {
-                $query->where(function($q) use ($search) {
+                $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('code', 'like', "%{$search}%")
-                      ->orWhere('description', 'like', "%{$search}%");
+                        ->orWhere('code', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
                 });
             }
 
@@ -167,7 +166,6 @@ class ProductController extends BaseController
                 'Daftar produk berhasil diambil',
                 HttpResponse::HTTP_OK
             );
-            
         } catch (\Exception $e) {
             Log::error('Error getting product list: ' . $e->getMessage());
             return $this->sendError(
@@ -277,15 +275,14 @@ class ProductController extends BaseController
                 'Produk berhasil ditambahkan',
                 HttpResponse::HTTP_CREATED
             );
-            
         } catch (\Exception $e) {
             Log::error('Error creating product: ' . $e->getMessage());
-            
+
             // Hapus file yang sudah diupload jika terjadi error
             if (isset($data['photo_path']) && Storage::disk('public')->exists($data['photo_path'])) {
                 Storage::disk('public')->delete($data['photo_path']);
             }
-            
+
             return $this->sendError(
                 'Gagal menambahkan produk',
                 null,
@@ -419,15 +416,14 @@ class ProductController extends BaseController
                 'Produk berhasil diperbarui',
                 HttpResponse::HTTP_OK
             );
-            
         } catch (\Exception $e) {
             Log::error('Error updating product: ' . $e->getMessage());
-            
+
             // Hapus foto baru yang sudah diupload jika terjadi error
             if (isset($data['photo_path']) && Storage::disk('public')->exists($data['photo_path'])) {
                 Storage::disk('public')->delete($data['photo_path']);
             }
-            
+
             return $this->sendError(
                 'Gagal memperbarui produk',
                 null,
@@ -523,10 +519,10 @@ class ProductController extends BaseController
             }
 
             // Check if product has related transactions through consignments
-            $hasTransactions = Transaction::whereHas('consignment', function($q) use ($product) {
+            $hasTransactions = Transaction::whereHas('consignment', function ($q) use ($product) {
                 $q->where('product_id', $product->id);
             })->exists();
-            
+
             if ($hasTransactions) {
                 return $this->sendError(
                     'Tidak dapat menghapus produk yang memiliki riwayat transaksi',
@@ -547,7 +543,6 @@ class ProductController extends BaseController
                 'Produk berhasil dihapus',
                 HttpResponse::HTTP_OK
             );
-            
         } catch (\Exception $e) {
             Log::error('Error deleting product: ' . $e->getMessage());
             return $this->sendError(

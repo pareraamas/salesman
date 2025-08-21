@@ -9,16 +9,16 @@ part of 'transaction_model.dart';
 TransactionModel _$TransactionModelFromJson(Map<String, dynamic> json) =>
     TransactionModel(
       id: (json['id'] as num).toInt(),
-      storeId: (json['storeId'] as num).toInt(),
-      userId: (json['userId'] as num?)?.toInt(),
-      invoiceNumber: json['invoiceNumber'] as String,
-      totalAmount: (json['totalAmount'] as num).toDouble(),
+      storeId: (json['store_id'] as num).toInt(),
+      userId: (json['user_id'] as num?)?.toInt(),
+      invoiceNumber: json['invoice_number'] as String,
+      totalAmount: (json['total_amount'] as num).toDouble(),
       discount: (json['discount'] as num?)?.toDouble(),
       tax: (json['tax'] as num?)?.toDouble(),
-      grandTotal: (json['grandTotal'] as num).toDouble(),
+      grandTotal: (json['grand_total'] as num).toDouble(),
       status: json['status'] as String,
       notes: json['notes'] as String?,
-      transactionDate: json['transactionDate'] as String?,
+      transactionDate: json['transaction_date'] as String?,
       store: json['store'] == null
           ? null
           : StoreModel.fromJson(json['store'] as Map<String, dynamic>),
@@ -28,26 +28,26 @@ TransactionModel _$TransactionModelFromJson(Map<String, dynamic> json) =>
       items: (json['items'] as List<dynamic>?)
           ?.map((e) => TransactionItemModel.fromJson(e as Map<String, dynamic>))
           .toList(),
-      createdAt: json['createdAt'] as String?,
-      updatedAt: json['updatedAt'] as String?,
+      createdAt: json['created_at'] as String?,
+      updatedAt: json['updated_at'] as String?,
     );
 
 Map<String, dynamic> _$TransactionModelToJson(TransactionModel instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'storeId': instance.storeId,
-      'userId': instance.userId,
-      'invoiceNumber': instance.invoiceNumber,
-      'totalAmount': instance.totalAmount,
+      'store_id': instance.storeId,
+      'user_id': instance.userId,
+      'invoice_number': instance.invoiceNumber,
+      'total_amount': instance.totalAmount,
       'discount': instance.discount,
       'tax': instance.tax,
-      'grandTotal': instance.grandTotal,
+      'grand_total': instance.grandTotal,
       'status': instance.status,
       'notes': instance.notes,
-      'transactionDate': instance.transactionDate,
-      'store': instance.store,
-      'user': instance.user,
-      'items': instance.items,
-      'createdAt': instance.createdAt,
-      'updatedAt': instance.updatedAt,
+      'transaction_date': instance.transactionDate,
+      'store': instance.store?.toJson(),
+      'user': instance.user?.toJson(),
+      'items': instance.items?.map((e) => e.toJson()).toList(),
+      'created_at': instance.createdAt,
+      'updated_at': instance.updatedAt,
     };

@@ -4,22 +4,12 @@ import 'package:salesman_mobile/app/modules/product/controllers/product_controll
 import 'package:salesman_mobile/app/routes/app_pages.dart';
 
 class ProductListView extends GetView<ProductController> {
-  const ProductListView({Key? key}) : super(key: key);
+  const ProductListView({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Daftar Produk'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => Get.toNamed(Routes.PRODUCT_CREATE),
-            tooltip: 'Tambah Produk',
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Daftar Produk'), centerTitle: true),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Get.toNamed(Routes.PRODUCT_CREATE),
         backgroundColor: Theme.of(context).primaryColor,
@@ -43,10 +33,7 @@ class ProductListView extends GetView<ProductController> {
                     style: const TextStyle(color: Colors.red),
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: controller.refreshProducts,
-                    child: const Text('Coba Lagi'),
-                  ),
+                  ElevatedButton(onPressed: controller.refreshProducts, child: const Text('Coba Lagi')),
                 ],
               ),
             );
@@ -64,10 +51,9 @@ class ProductListView extends GetView<ProductController> {
                 if (!controller.isLoading.value) {
                   controller.fetchProducts(loadMore: true);
                 }
-                return const Center(child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: CircularProgressIndicator(),
-                ));
+                return const Center(
+                  child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()),
+                );
               }
 
               final product = controller.products[index];
@@ -77,30 +63,24 @@ class ProductListView extends GetView<ProductController> {
                   leading: Container(
                     width: 50,
                     height: 50,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: product.imageUrl != null
+                    decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(8)),
+                    child: product.getFullPhotoUrl != null
                         ? ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: Image.network(
-                              product.imageUrl!,
+                              product.getFullPhotoUrl!,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => 
-                                  const Icon(Icons.shopping_bag, color: Colors.blue),
+                              errorBuilder: (context, error, stackTrace) => const Icon(Icons.shopping_bag, color: Colors.blue),
                             ),
                           )
                         : const Icon(Icons.shopping_bag, color: Colors.blue),
                   ),
                   title: Text(product.name),
-                  subtitle: Text('Stok: ${product.stock} pcs • Rp${product.price.toStringAsFixed(2)}'),
+                  subtitle: Text('Kode: ${product.code} • Rp${product.price}'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
                     // Navigate to product detail
-                    Get.toNamed(
-                      '${Routes.PRODUCT_DETAIL.replaceAll(':id', product.id.toString())}',
-                    );
+                    Get.toNamed('${Routes.PRODUCT_DETAIL.replaceAll(':id', product.id.toString())}');
                   },
                 ),
               );

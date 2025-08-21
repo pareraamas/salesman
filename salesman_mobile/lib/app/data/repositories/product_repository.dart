@@ -15,22 +15,13 @@ class ProductRepository {
     try {
       final response = await _apiService.get<List<dynamic>>(
         ApiUrl.products,
-        queryParameters: {
-          'page': page,
-          'limit': limit,
-          if (search != null && search.isNotEmpty) 'search': search,
-          if (storeId != null) 'store_id': storeId,
-        },
+        queryParameters: {'page': page, 'limit': limit, if (search != null && search.isNotEmpty) 'search': search, if (storeId != null) 'store_id': storeId},
         fromJsonT: (json) => json as List<dynamic>,
       );
 
       if (response.success && response.data != null) {
         final products = (response.data as List).map((product) => ProductModel.fromJson(product as Map<String, dynamic>)).toList();
-        return AppResponse<List<ProductModel>>(
-          success: true,
-          data: products,
-          meta: response.meta,
-        );
+        return AppResponse<List<ProductModel>>(success: true, data: products, meta: response.meta);
       }
 
       return AppResponse<List<ProductModel>>(
@@ -41,10 +32,7 @@ class ProductRepository {
       );
     } catch (e) {
       _logger.e('Get products error: $e');
-      return AppResponse<List<ProductModel>>(
-        success: false, 
-        message: 'Terjadi kesalahan saat memuat data produk',
-      );
+      return AppResponse<List<ProductModel>>(success: false, message: 'Terjadi kesalahan saat memuat data produk');
     }
   }
 
@@ -73,7 +61,7 @@ class ProductRepository {
       final response = await _apiService.post<Map<String, dynamic>>(ApiUrl.products, data: product.toJson(), fromJsonT: (json) => json as Map<String, dynamic>);
 
       if (response.success && response.data != null) {
-        return AppResponse<ProductModel>(success: true, data: ProductModel.fromJson(response.data!['data']));
+        return AppResponse<ProductModel>(success: true, data: ProductModel.fromJson(response.data!));
       }
 
       return AppResponse<ProductModel>(
