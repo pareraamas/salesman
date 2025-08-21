@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:salesman_mobile/app/data/repositories/auth_repository.dart';
+import 'package:salesman_mobile/app/data/sources/local_service.dart';
 import 'package:salesman_mobile/app/routes/app_pages.dart';
 
 class AuthController extends GetxController {
@@ -25,7 +27,6 @@ class AuthController extends GetxController {
   final passwordError = ''.obs;
   final confirmPasswordError = ''.obs;
 
-
   @override
   void onClose() {
     emailController.dispose();
@@ -41,9 +42,10 @@ class AuthController extends GetxController {
 
   // Check if user is already logged in
   Future<void> checkAuthStatus() async {
-    // Check if token exists in api service
-    if (_authRepo.isLoggedIn()) {
-      // Navigate to home if token exists
+    // Periksa status login dari LocalService
+    final isLoggedIn = await LocalService.isLoggedIn();
+    if (isLoggedIn) {
+      // Navigate to home if logged in
       Get.offAllNamed(Routes.HOME);
     }
   }
@@ -51,25 +53,22 @@ class AuthController extends GetxController {
   // Login method
   Future<void> login() async {
     if (isLoading.value) return;
-    
+
     try {
       isLoading.value = true;
-      
-      final response = await _authRepo.login(
-        emailController.text.trim(),
-        passwordController.text,
-      );
-      
+
+      final response = await _authRepo.login(emailController.text.trim(), passwordController.text);
+
       if (response.success) {
+        // Simpan data user dan token ke local storage
+        await LocalService.setLoggedIn(true);
+        await LocalService.saveAuthToken(response.data?['token']);
+        await LocalService.saveUserData(jsonEncode(response.data?['user']));
+
         // Navigate to home on success
         Get.offAllNamed(Routes.HOME);
       } else {
-        Get.snackbar(
-          'Login Gagal', 
-          response.message ?? 'Terjadi kesalahan saat login',
-          backgroundColor: Colors.red, 
-          colorText: Colors.white
-        );
+        Get.snackbar('Login Gagal', response.message ?? 'Terjadi kesalahan saat login', backgroundColor: Colors.red, colorText: Colors.white);
       }
     } catch (e) {
       Get.snackbar(
@@ -90,12 +89,7 @@ class AuthController extends GetxController {
       isLoading.value = true;
 
       if (passwordController.text != confirmPasswordController.text) {
-        Get.snackbar(
-          'Error', 
-          'Konfirmasi password tidak cocok',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
+        Get.snackbar('Error', 'Konfirmasi password tidak cocok', backgroundColor: Colors.red, colorText: Colors.white);
         return;
       }
 
@@ -111,12 +105,7 @@ class AuthController extends GetxController {
         Get.offAllNamed(Routes.HOME);
       } else {
         // Show error message
-        Get.snackbar(
-          'Registrasi Gagal',
-          response.message ?? 'Registrasi gagal',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
+        Get.snackbar('Registrasi Gagal', response.message ?? 'Registrasi gagal', backgroundColor: Colors.red, colorText: Colors.white);
         // Handle validation errors
         if (response.errors != null) {
           final errors = response.errors!;

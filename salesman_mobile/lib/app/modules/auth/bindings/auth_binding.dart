@@ -10,7 +10,7 @@ class AuthBinding extends Bindings {
 
   @override
   void dependencies() {
-    final authRepo = AuthRepository();
+    final authRepo = Get.find<AuthRepository>();
 
     // Initialize controller with dependencies
     Get.lazyPut<AuthController>(() => AuthController(authRepository: authRepo), tag: tag);

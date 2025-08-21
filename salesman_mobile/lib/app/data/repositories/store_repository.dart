@@ -6,53 +6,42 @@ import 'package:salesman_mobile/app/core/api_url.dart';
 
 class StoreRepository {
   final ApiService _apiService;
-  final _logger = Logger(
-    printer: PrettyPrinter(
-      methodCount: 0,
-      errorMethodCount: 5,
-      lineLength: 50,
-      colors: true,
-      printEmojis: true,
-    ),
-  );
+  final _logger = Logger(printer: PrettyPrinter(methodCount: 0, errorMethodCount: 5, lineLength: 50, colors: true, printEmojis: true));
 
   StoreRepository({required ApiService api}) : _apiService = api;
 
   /// Get list of stores with pagination and search
-  Future<AppResponse<Map<String, dynamic>>> getStores({
+  Future<AppResponse<List<StoreModel>>> getStores({
     int? page, 
     int? limit, 
     String? search,
     bool? activeOnly,
   }) async {
     try {
-      final response = await _apiService.get<Map<String, dynamic>>(
+      final response = await _apiService.get<List<dynamic>>(
         ApiUrl.stores,
         queryParameters: {
           'page': page,
           'limit': limit,
-          'search': search,
-          'active_only': activeOnly,
-        }..removeWhere((key, value) => value == null),
-        fromJsonT: (json) => json as Map<String, dynamic>,
+          if (search != null && search.isNotEmpty) 'search': search,
+          if (activeOnly != null) 'active_only': activeOnly,
+        },
+        fromJsonT: (json) => json as List<dynamic>,
       );
       
       if (response.success && response.data != null) {
-        final dataList = response.data!['data'] is List ? response.data!['data'] : [];
-        final stores = (dataList as List)
-            .map((store) => StoreModel.fromJson(store))
+        final stores = (response.data as List)
+            .map((store) => StoreModel.fromJson(store as Map<String, dynamic>))
             .toList();
         
-        return AppResponse<Map<String, dynamic>>(
+        return AppResponse<List<StoreModel>>(
           success: true,
-          data: {
-            'stores': stores,
-            'pagination': response.data!['meta'] ?? {},
-          },
+          data: stores,
+          meta: response.meta,
         );
       }
       
-      return AppResponse<Map<String, dynamic>>(
+      return AppResponse<List<StoreModel>>(
         success: false,
         message: response.message ?? 'Gagal memuat data toko',
         errors: response.errors,
@@ -60,7 +49,7 @@ class StoreRepository {
       );
     } catch (e) {
       _logger.e('Get stores error: $e');
-      return AppResponse<Map<String, dynamic>>(
+      return AppResponse<List<StoreModel>>(
         success: false,
         message: 'Terjadi kesalahan saat memuat data toko',
       );
@@ -71,13 +60,13 @@ class StoreRepository {
     try {
       final response = await _apiService.get<Map<String, dynamic>>(
         '${ApiUrl.storeById}$id',
-        fromJsonT: (json) => json as Map<String, dynamic>,
+        fromJsonT: (json) => json,
       );
       
       if (response.success && response.data != null) {
         return AppResponse<StoreModel>(
           success: true,
-          data: StoreModel.fromJson(response.data!['data']),
+          data: StoreModel.fromJson(response.data!),
         );
       }
       
@@ -101,13 +90,13 @@ class StoreRepository {
       final response = await _apiService.post<Map<String, dynamic>>(
         ApiUrl.stores,
         data: store.toJson(),
-        fromJsonT: (json) => json as Map<String, dynamic>,
+        fromJsonT: (json) => json,
       );
       
       if (response.success && response.data != null) {
         return AppResponse<StoreModel>(
           success: true,
-          data: StoreModel.fromJson(response.data!['data']),
+          data: StoreModel.fromJson(response.data!),
         );
       }
       
@@ -131,13 +120,13 @@ class StoreRepository {
       final response = await _apiService.put<Map<String, dynamic>>(
         '${ApiUrl.storeById}${store.id}',
         data: store.toJson(),
-        fromJsonT: (json) => json as Map<String, dynamic>,
+        fromJsonT: (json) => json,
       );
       
       if (response.success && response.data != null) {
         return AppResponse<StoreModel>(
           success: true,
-          data: StoreModel.fromJson(response.data!['data']),
+          data: StoreModel.fromJson(response.data!),
         );
       }
       
@@ -160,7 +149,7 @@ class StoreRepository {
     try {
       final response = await _apiService.delete<Map<String, dynamic>>(
         '${ApiUrl.storeById}$id',
-        fromJsonT: (json) => json as Map<String, dynamic>,
+        fromJsonT: (json) => json,
       );
       
       if (response.success) {

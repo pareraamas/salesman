@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logger/logger.dart';
 import '../models/app_response.dart';
+import 'local_service.dart';
 
 // Re-export Dio types for easier access
 
@@ -47,19 +48,28 @@ class ApiService {
   }
 
   // Token management
-  String? _authToken;
+  String? _cachedToken;
 
   // Get authentication token
-  String? get token => _authToken;
+  Future<String?> get token async {
+    _cachedToken ??= await LocalService.getAuthToken();
+    return _cachedToken;
+  }
 
   // Set authentication token
-  void setAuthToken(String? token) {
-    _authToken = token;
+  Future<void> setAuthToken(String? token) async {
+    _cachedToken = token;
+    if (token != null) {
+      await LocalService.saveAuthToken(token);
+    } else {
+      await LocalService.deleteAuthToken();
+    }
   }
 
   // Clear authentication token
-  void clearAuthToken() {
-    _authToken = null;
+  Future<void> clearAuthToken() async {
+    _cachedToken = null;
+    await LocalService.deleteAuthToken();
   }
 
   // Private method for internal initialization
@@ -84,8 +94,9 @@ class ApiService {
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           // Add auth token if exists
-          if (_authToken != null) {
-            options.headers['Authorization'] = 'Bearer $_authToken';
+          final token = await this.token;
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
           }
 
           _logRequest(options);

@@ -20,7 +20,7 @@ class AuthRepository extends GetxService {
 
         // Set token after successful login
         if (token != null) {
-          _apiService.setAuthToken(token);
+          await _apiService.setAuthToken(token);
         }
 
         return AppResponse<Map<String, dynamic>>(
@@ -41,8 +41,9 @@ class AuthRepository extends GetxService {
   }
 
   /// Check if user is logged in
-  bool isLoggedIn() {
-    return _apiService.token != null && _apiService.token!.isNotEmpty;
+  Future<bool> isLoggedIn() async {
+    final token = await _apiService.token;
+    return token != null && token.isNotEmpty;
   }
 
   /// Register new user
@@ -69,7 +70,7 @@ class AuthRepository extends GetxService {
 
         // Set token after successful registration
         if (token != null) {
-          _apiService.setAuthToken(token);
+          await _apiService.setAuthToken(token);
         }
 
         return AppResponse<Map<String, dynamic>>(
@@ -95,7 +96,7 @@ class AuthRepository extends GetxService {
       final response = await _apiService.post<void>(ApiUrl.logout);
 
       // Clear token regardless of response
-      _apiService.setAuthToken(null);
+      await _apiService.clearAuthToken();
 
       if (response.success) {
         return AppResponse<void>(success: true, message: response.message);
@@ -105,7 +106,7 @@ class AuthRepository extends GetxService {
     } catch (e) {
       _logger.e('Logout error: $e');
       // Still clear token even if there's an error
-      _apiService.setAuthToken(null);
+      await _apiService.clearAuthToken();
 
       return AppResponse<void>(success: false, message: 'Gagal logout. Silakan coba lagi.');
     }
@@ -114,6 +115,14 @@ class AuthRepository extends GetxService {
   /// Get current authenticated user
   Future<AppResponse<UserModel>> getUser() async {
     try {
+      final token = await _apiService.token;
+      if (token == null || token.isEmpty) {
+        return AppResponse<UserModel>(
+          success: false,
+          message: 'Tidak ada token autentikasi',
+        );
+      }
+      
       final response = await _apiService.get<Map<String, dynamic>>(ApiUrl.user);
       
       if (response.success && response.data != null) {
@@ -124,6 +133,11 @@ class AuthRepository extends GetxService {
         );
       }
       
+      // Jika token tidak valid, bersihkan token
+      if (response.statusCode == 401) {
+        await _apiService.clearAuthToken();
+      }
+      
       return AppResponse<UserModel>(
         success: false,
         message: response.message ?? 'Gagal mengambil data pengguna',
@@ -131,9 +145,15 @@ class AuthRepository extends GetxService {
       );
     } catch (e) {
       _logger.e('Get user error: $e');
+      
+      // Jika terjadi error karena token tidak valid, bersihkan token
+      if (e.toString().contains('401') || e.toString().contains('unauthorized')) {
+        await _apiService.clearAuthToken();
+      }
+      
       return AppResponse<UserModel>(
         success: false,
-        message: 'Terjadi kesalahan saat mengambil data pengguna',
+        message: 'Terjadi kesalahan saat mengambil data pengguna: ${e.toString()}',
       );
     }
   }

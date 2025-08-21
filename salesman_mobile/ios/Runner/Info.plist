@@ -45,5 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>MGLMapboxAccessToken</key>
+ 	<string>pk.eyJ1IjoiYW1hc3BhcmVyYSIsImEiOiJjbWU0ejNib2UwOTEyMm1vcXMyZWkzcDc1In0.A9Np_zNpZQzNrDJh5w8Y_w</string>
 </dict>
 </plist>
