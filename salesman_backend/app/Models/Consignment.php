@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 
@@ -19,7 +20,6 @@ class Consignment extends Model
     protected $fillable = [
         'code',
         'store_id',
-        'product_id',
         'quantity',
         'consignment_date',
         'pickup_date',
@@ -27,7 +27,7 @@ class Consignment extends Model
         'photo_path',
         'notes'
     ];
-    
+
     /**
      * The "booting" method of the model.
      */
@@ -39,7 +39,7 @@ class Consignment extends Model
             if (empty($consignment->code)) {
                 $count = static::withTrashed()->count() + 1;
                 $consignment->code = 'CONS-' . str_pad($count, 5, '0', STR_PAD_LEFT);
-                
+
                 // Ensure the code is unique
                 while (static::where('code', $consignment->code)->withTrashed()->exists()) {
                     $count++;
@@ -71,9 +71,9 @@ class Consignment extends Model
     /**
      * Get the product that owns the consignment.
      */
-    public function product(): BelongsTo
+    public function products(): BelongsToMany
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsToMany(ProductItem::class);
     }
 
     /**
