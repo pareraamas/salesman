@@ -292,6 +292,67 @@ class ProductController extends BaseController
     }
 
     /**
+     * @OA\Get(
+     *     path="/api/products/{id}",
+     *     operationId="getProductById",
+     *     tags={"Produk"},
+     *     summary="Mendapatkan detail produk",
+     *     description="Mengembalikan detail produk berdasarkan ID",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="ID produk",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Detail produk berhasil diambil",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", ref="#/components/schemas/Product"),
+     *             @OA\Property(property="message", type="string", example="Detail produk berhasil diambil"),
+     *             @OA\Property(property="code", type="integer", example=200)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Produk tidak ditemukan",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Produk tidak ditemukan"),
+     *             @OA\Property(property="code", type="integer", example=404)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Kesalahan server",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Terjadi kesalahan saat mengambil detail produk"),
+     *             @OA\Property(property="code", type="integer", example=500)
+     *         )
+     *     )
+     * )
+     */
+    public function show(Product $product)
+    {
+        try {
+            // Eager load relationships if needed
+
+            return $this->sendResponse($product, 'Detail produk berhasil diambil');
+        } catch (\Exception $e) {
+            Log::error('Error getting product details: ' . $e->getMessage());
+            return $this->sendError(
+                'Terjadi kesalahan saat mengambil detail produk',
+                [],
+                HttpResponse::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    /**
      * @OA\Put(
      *     path="/api/products/{id}",
      *     operationId="updateProduct",

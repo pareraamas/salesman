@@ -28,13 +28,6 @@ class Product extends Model
         'deleted_at' => 'datetime',
     ];
 
-    /**
-     * Get the consignments for the product.
-     */
-    public function consignments(): HasMany
-    {
-        return $this->hasMany(Consignment::class);
-    }
 
     /**
      * Get the full URL for the product's photo.

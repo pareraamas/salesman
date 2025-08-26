@@ -80,7 +80,7 @@ class ProductListView extends GetView<ProductController> {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
                     // Navigate to product detail
-                    Get.toNamed('${Routes.PRODUCT_DETAIL.replaceAll(':id', product.id.toString())}');
+                    Get.toNamed('${Routes.PRODUCT_UPDATE.replaceAll(':id', product.id.toString())}', parameters: {'id': product.id.toString()});
                   },
                 ),
               );

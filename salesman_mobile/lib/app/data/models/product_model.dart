@@ -34,4 +34,30 @@ class ProductModel {
   Map<String, dynamic> toJson() => _$ProductModelToJson(this);
 
   String? get getFullPhotoUrl => photoUrl != null ? '${dotenv.env['BASE_URL']}$photoUrl' : null;
+
+  ProductModel copyWith({
+    int? id,
+    String? name,
+    String? code,
+    String? price,
+    String? description,
+    String? photoPath,
+    String? photoUrl,
+    String? createdAt,
+    String? updatedAt,
+    String? deletedAt,
+  }) {
+    return ProductModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      code: code ?? this.code,
+      price: price ?? this.price,
+      description: description ?? this.description,
+      photoPath: photoPath ?? this.photoPath,
+      photoUrl: photoUrl ?? this.photoUrl,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+    );
+  }
 }

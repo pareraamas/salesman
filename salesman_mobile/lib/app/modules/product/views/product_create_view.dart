@@ -8,7 +8,10 @@ import 'package:salesman_mobile/core/theme/app_colors.dart';
 import 'package:salesman_mobile/core/theme/app_text_styles.dart';
 
 class ProductCreateView extends GetView<ProductController> {
-  const ProductCreateView({Key? key}) : super(key: key);
+  ProductCreateView({Key? key}) : super(key: key) {
+    // Clear all controllers when view is created
+    controller.clearControllers();
+  }
 
   @override
   Widget build(BuildContext context) {

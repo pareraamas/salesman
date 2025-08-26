@@ -14,6 +14,7 @@ class ProductController extends GetxController {
   final currentPage = 1.obs;
   final hasMore = true.obs;
   final searchQuery = ''.obs;
+  final currentProduct = Rxn<ProductModel>();
   
   // Form controllers
   final nameController = TextEditingController();
@@ -24,7 +25,157 @@ class ProductController extends GetxController {
 
   // Constructor with dependency injection
   ProductController({required ProductRepository productRepository}) 
-      : _productRepository = productRepository;
+      : _productRepository = productRepository {
+    // Initialize any necessary setup
+    clearControllers();
+  }
+  
+  // Clear all text controllers
+  void clearControllers() {
+    nameController.clear();
+    codeController.clear();
+    descriptionController.clear();
+    priceController.clear();
+    errorMessage.value = '';
+    if (formKey.currentState != null) {
+      formKey.currentState!.reset();
+    }
+  }
+
+  Future<void> getProductById(int id) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+      final response = await _productRepository.getProductById(id);
+      if (response.success && response.data != null) {
+        currentProduct.value = response.data!;
+        nameController.text = response.data!.name;
+        codeController.text = response.data!.code;
+        priceController.text = response.data!.price;
+        descriptionController.text = response.data!.description ?? '';
+      } else {
+        errorMessage.value = response.message ?? 'Gagal memuat data produk';
+      }
+    } catch (e) {
+      errorMessage.value = 'Gagal memuat data produk: $e';
+      Get.snackbar(
+        'Error',
+        errorMessage.value,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> updateProduct(int id) async {
+    if (!formKey.currentState!.validate()) return;
+
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+      
+      // Create updated product with form data
+      final updatedProduct = ProductModel(
+        id: id,
+        name: nameController.text.trim(),
+        code: codeController.text.trim(),
+        price: priceController.text.trim(),
+        description: descriptionController.text.trim().isNotEmpty 
+            ? descriptionController.text.trim() 
+            : null,
+        // Preserve existing values for fields not in the form
+        photoUrl: currentProduct.value?.photoUrl,
+        photoPath: currentProduct.value?.photoPath,
+        createdAt: currentProduct.value?.createdAt,
+        updatedAt: currentProduct.value?.updatedAt,
+        deletedAt: currentProduct.value?.deletedAt,
+      );
+
+      final response = await _productRepository.updateProduct(updatedProduct);
+      
+      if (response.success && response.data != null) {
+        // Update the current product with the response data
+        currentProduct.value = response.data!;
+        
+        // Show success message
+        Get.snackbar(
+          'Sukses',
+          'Produk berhasil diperbarui',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 2),
+        );
+        
+        // Close the update view after a short delay
+        await Future.delayed(const Duration(seconds: 1));
+        Get.back(result: true); // Pass true to indicate success
+      } else {
+        throw Exception(response.message ?? 'Gagal memperbarui produk');
+      }
+    } catch (e) {
+      errorMessage.value = 'Terjadi kesalahan: $e';
+      Get.snackbar(
+        'Error',
+        errorMessage.value,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> deleteProduct(int id) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+      
+      final response = await _productRepository.deleteProduct(id);
+      
+      if (response.success) {
+        Get.back(); // Close any open dialogs
+        
+        // Show success message
+        Get.snackbar(
+          'Sukses',
+          'Produk berhasil dihapus',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 2),
+        );
+        
+        // Navigate back to product list with refresh flag
+        Get.until((route) => route.isFirst);
+        Get.offNamed('/products', arguments: {'refresh': true});
+      } else {
+        errorMessage.value = response.message ?? 'Gagal menghapus produk';
+        Get.snackbar(
+          'Error',
+          errorMessage.value,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      errorMessage.value = 'Terjadi kesalahan saat menghapus produk: $e';
+      Get.snackbar(
+        'Error',
+        errorMessage.value,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
 
   @override
   void onClose() {

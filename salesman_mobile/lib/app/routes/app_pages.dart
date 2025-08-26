@@ -8,6 +8,7 @@ import '../modules/home/views/home_view.dart';
 import 'package:salesman_mobile/app/modules/product/bindings/product_binding.dart';
 import 'package:salesman_mobile/app/modules/product/views/product_list_view.dart';
 import 'package:salesman_mobile/app/modules/product/views/product_create_view.dart';
+import 'package:salesman_mobile/app/modules/product/views/product_update_view.dart';
 import 'package:salesman_mobile/app/modules/store/bindings/store_binding.dart';
 import 'package:salesman_mobile/app/modules/store/views/store_detail_view.dart';
 import 'package:salesman_mobile/app/modules/store/views/store_list_view.dart';
@@ -54,7 +55,13 @@ class AppPages {
     ),
     GetPage(
       name: _Paths.PRODUCT_CREATE,
-      page: () => const ProductCreateView(),
+      page: () => ProductCreateView(),
+      binding: ProductBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: _Paths.PRODUCT_UPDATE,
+      page: () => const ProductUpdateView(),
       binding: ProductBinding(),
       middlewares: [AuthMiddleware()],
     ),
