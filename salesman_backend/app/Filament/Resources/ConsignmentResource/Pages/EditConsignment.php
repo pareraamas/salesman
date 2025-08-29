@@ -16,4 +16,22 @@ class EditConsignment extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+    
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $data['productItems'] = $this->record->productItems->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'product_id' => $item->product_id,
+                'name' => $item->name,
+                'code' => $item->code,
+                'price' => $item->price,
+                'qty' => $item->qty,
+                'description' => $item->description,
+                'photo_path' => $item->photo_path,
+            ];
+        })->toArray();
+        
+        return $data;
+    }
 }

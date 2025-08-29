@@ -13,17 +13,30 @@ return new class extends Migration
     {
         Schema::create('product_items', function (Blueprint $table) {
             $table->id();
-            $table->int('product_id');
-            $table->foreignId('consignment_id')->references('consignments');
+
+            // Relasi ke product
+            $table->foreignId('product_id')
+                ->constrained('products')
+                ->cascadeOnDelete();
+
+            // Relasi ke consignment
+            $table->foreignId('consignment_id')
+                ->constrained('consignments')
+                ->cascadeOnDelete();
+
+            // Relasi ke transaction
+            $table->foreignId('transaction_id')
+                ->nullable()
+                ->constrained('transactions')
+                ->cascadeOnDelete();
+
             $table->string('name');
-            $table->string('code')->unique();
+            $table->string('code');
             $table->decimal('price', 12, 2);
             $table->text('description')->nullable();
-            $table->string('photo_path')->nullable();
             $table->integer('qty')->default(0);
             $table->integer('sales')->default(0);
-            $table->integer('qty')->default(0);
-            $table->integer('return')->default(0);
+            $table->integer('return')->default(0); // ganti nama kolom biar aman
             $table->timestamps();
             $table->softDeletes();
         });

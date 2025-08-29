@@ -7,21 +7,51 @@ use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Infolists\Components;
 use Filament\Infolists\Infolist;
-use Filament\Infolists\Component\TextEntry;
-use Filament\Infolists\Component\Section as InfoSection;
+use Filament\Support\Enums\FontWeight;
+use Filament\Support\Enums\FontFamily;
+use Illuminate\Support\Facades\DB;
+use App\Models\ProductItem;
 
 class ViewTransaction extends ViewRecord
 {
     protected static string $resource = TransactionResource::class;
 
+    public function mount($record): void
+    {
+        parent::mount($record);
+        $this->record->load('items');
+    }
+
     protected function getHeaderActions(): array
     {
-        return [
+        $actions = [
             Actions\EditAction::make(),
-            Actions\DeleteAction::make(),
-            Actions\ForceDeleteAction::make(),
-            Actions\RestoreAction::make(),
+            Actions\Action::make('print')
+                ->label('Cetak')
+                ->icon('heroicon-o-printer')
+                ->url(fn($record) => route('transactions.print', $record))
+                ->openUrlInNewTab(),
         ];
+
+        if ($this->record->consignment && $this->record->consignment->store) {
+            $store = $this->record->consignment->store;
+
+            if ($store->email) {
+                $actions[] = Actions\Action::make('email')
+                    ->label('Email')
+                    ->icon('heroicon-o-envelope')
+                    ->url(fn() => 'mailto:' . $store->email . '?subject=Transaksi ' . $this->record->code);
+            }
+
+            if ($store->phone) {
+                $actions[] = Actions\Action::make('whatsapp')
+                    ->label('WhatsApp')
+                    ->icon('heroicon-o-chat-bubble-left-right')
+                    ->url(fn() => 'https://wa.me/' . $store->phone . '?text=Halo%20' . urlencode($store->name) . ',%0A%0ABerikut%20rincian%20transaksi%20Anda:%0AKode:%20' . $this->record->code . '%0ATanggal:%20' . $this->record->transaction_date->format('d/m/Y') . '%0AStatus:%20' . $this->record->status . '%0A%0ATerima%20kasih%20telah%20bertransaksi%20dengan%20kami.');
+            }
+        }
+
+        return $actions;
     }
 
     public function infolist(Infolist $infolist): Infolist
@@ -34,69 +64,123 @@ class ViewTransaction extends ViewRecord
                             Components\Grid::make(2)
                                 ->schema([
                                     Components\Group::make([
-                                        Components\TextEntry::make('code')
-                                            ->label('Kode Transaksi')
-                                            ->size(TextEntry\TextEntrySize::Large)
-                                            ->weight('font-bold'),
                                         Components\TextEntry::make('transaction_date')
                                             ->label('Tanggal Transaksi')
                                             ->dateTime('d M Y H:i'),
-                                    ])->columnSpan(1),
+                                    ]),
+                                    Components\Group::make([
+                                        Components\TextEntry::make('total_sold')
+                                            ->label('Total Terjual')
+                                            ->badge()
+                                            ->color('success')
+                                            ->size('lg'),
+                                        Components\TextEntry::make('total_amount')
+                                            ->label('Total Nilai')
+                                            ->numeric(
+                                                decimalPlaces: 0,
+                                                decimalSeparator: '.',
+                                                thousandsSeparator: '.',
+                                            )
+                                            ->prefix('Rp')
+                                            ->size('lg')
+                                            ->weight(FontWeight::Bold),
+                                    ]),
                                 ]),
                         ]),
 
-                        InfoSection::make('Detail Konsinyasi')
+                        Components\Section::make('Detail Konsinyasi')
                             ->schema([
                                 Components\TextEntry::make('consignment.code')
                                     ->label('Kode Konsinyasi')
-                                    ->url(fn ($record) => route('filament.admin.resources.konsinyasi/' . $record->consignment_id, ['record' => $record->consignment_id])),
+                                    ->url(fn($record) => route('filament.admin.resources.konsinyasi.view', $record->consignment_id)),
                                 Components\TextEntry::make('consignment.store.name')
                                     ->label('Toko')
-                                    ->url(fn ($record) => route('filament.admin.resources.stores/' . $record->consignment->store_id, ['record' => $record->consignment->store_id])),
-                                Components\TextEntry::make('consignment.product.name')
-                                    ->label('Produk')
-                                    ->url(fn ($record) => route('filament.admin.resources.products/' . $record->consignment->product_id, ['record' => $record->consignment->product_id])),
+                                    ->url(fn($record) => route('filament.admin.resources.stores.edit', $record->consignment->store_id)),
+                                Components\TextEntry::make('items_count')
+                                    ->label('Jumlah Item')
+                                    ->state(fn($record) => $record->items()->count())
+                                    ->badge(),
                             ])
                             ->columns(3),
 
-                        InfoSection::make('Detail Transaksi')
+                        Components\Section::make('Daftar Item Transaksi')
                             ->schema([
-                                Components\TextEntry::make('sold_quantity')
-                                    ->label('Jumlah Terjual')
-                                    ->badge()
-                                    ->color('success')
-                                    ->formatStateUsing(fn ($state) => $state > 0 ? $state : '-'),
-                                Components\TextEntry::make('returned_quantity')
-                                    ->label('Jumlah Dikembalikan')
-                                    ->badge()
-                                    ->color('warning')
-                                    ->formatStateUsing(fn ($state) => $state > 0 ? $state : '-'),
+                                Components\RepeatableEntry::make('items')
+                                    ->schema([
+                                        Components\TextEntry::make('name')
+                                            ->label('Nama Produk')
+                                            ->weight(FontWeight::Medium)
+                                            ->state(function (ProductItem $record) {
+                                                return $record->name;
+                                            }),
+                                        Components\TextEntry::make('price')
+                                            ->label('Harga Satuan')
+                                            ->numeric(
+                                                decimalPlaces: 0,
+                                                decimalSeparator: '.',
+                                                thousandsSeparator: '.',
+                                            )
+                                            ->prefix('Rp')
+                                            ->state(function (ProductItem $record) {
+                                                return $record->price;
+                                            }),
+                                        Components\TextEntry::make('sales')
+                                            ->label('Terjual')
+                                            ->badge()
+                                            ->color('success')
+                                            ->state(function (ProductItem $record) {
+                                                return $record->sales > 0 ? $record->sales : '-';
+                                            }),
+                                        Components\TextEntry::make('return')
+                                            ->label('Dikembalikan')
+                                            ->badge()
+                                            ->color('warning')
+                                            ->state(function (ProductItem $record) {
+                                                return $record->return > 0 ? $record->return : '-';
+                                            }),
+                                        Components\TextEntry::make('subtotal')
+                                            ->label('Subtotal')
+                                            ->numeric(
+                                                decimalPlaces: 0,
+                                                decimalSeparator: '.',
+                                                thousandsSeparator: '.',
+                                            )
+                                            ->prefix('Rp')
+                                            ->state(function (ProductItem $record) {
+                                                return $record->sales  * $record->price;
+                                            }),
+                                    ])
+                                    ->columns(5)
+                                    ->grid(1)
+                                    ->contained(false)
+                                    ->columnSpanFull(),
                             ])
-                            ->columns(2),
+                            ->collapsible()
+                            ->collapsed(fn($record) => $record->items->count() > 3),
 
-                        InfoSection::make('Foto Bukti')
+                        Components\Section::make('Foto Bukti')
                             ->schema([
                                 Components\ImageEntry::make('sold_items_photo_path')
                                     ->label('Barang Terjual')
-                                    ->visible(fn ($record) => $record->sold_items_photo_path)
+                                    ->visible(fn($record) => $record->sold_items_photo_path)
                                     ->columnSpan(1),
                                 Components\ImageEntry::make('returned_items_photo_path')
                                     ->label('Barang Dikembalikan')
-                                    ->visible(fn ($record) => $record->returned_items_photo_path)
+                                    ->visible(fn($record) => $record->returned_items_photo_path)
                                     ->columnSpan(1),
                             ])
                             ->columns(2)
-                            ->visible(fn ($record) => $record->sold_items_photo_path || $record->returned_items_photo_path),
+                            ->visible(fn($record) => $record->sold_items_photo_path || $record->returned_items_photo_path),
 
-                        InfoSection::make('Catatan')
+                        Components\Section::make('Catatan')
                             ->schema([
                                 Components\TextEntry::make('notes')
                                     ->label('')
                                     ->columnSpanFull()
                                     ->markdown()
-                                    ->hidden(fn ($record) => !$record->notes),
+                                    ->hidden(fn($record) => !$record->notes),
                             ])
-                            ->hidden(fn ($record) => !$record->notes),
+                            ->hidden(fn($record) => !$record->notes),
                     ]),
 
                 Components\Section::make('Informasi Sistem')

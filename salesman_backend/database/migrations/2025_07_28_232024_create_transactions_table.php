@@ -14,12 +14,11 @@ return new class extends Migration
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('consignment_id')->constrained()->onDelete('cascade');
-            $table->integer('sold_quantity')->default(0);
-            $table->integer('returned_quantity')->default(0);
-            $table->date('transaction_date');
+            $table->dateTime('transaction_date');
             $table->string('sold_items_photo_path')->nullable();
             $table->string('returned_items_photo_path')->nullable();
             $table->text('notes')->nullable();
+            $table->string('status')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

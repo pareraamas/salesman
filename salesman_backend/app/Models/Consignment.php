@@ -20,7 +20,6 @@ class Consignment extends Model
     protected $fillable = [
         'code',
         'store_id',
-        'quantity',
         'consignment_date',
         'pickup_date',
         'status',
@@ -69,11 +68,19 @@ class Consignment extends Model
     }
 
     /**
-     * Get the product that owns the consignment.
+     * The product items that belong to the consignment.
      */
-    public function products(): BelongsToMany
+    public function productItems()
     {
-        return $this->belongsToMany(ProductItem::class);
+        return $this->hasMany(ProductItem::class);
+    }
+
+    /**
+     * The product associated with this consignment.
+     */
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
     }
 
     /**

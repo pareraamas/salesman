@@ -3,30 +3,32 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ConsignmentResource\Pages;
-use App\Filament\Resources\ConsignmentResource\RelationManagers;
 use App\Models\Consignment;
+use App\Models\Product;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use NunoMaduro\Collision\Adapters\Phpunit\State;
 
 class ConsignmentResource extends Resource
 {
     protected static ?string $model = Consignment::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-arrow-up-tray';
-    
+
     protected static ?string $modelLabel = 'Konsinyasi';
-    
+
     protected static ?string $navigationLabel = 'Data Konsinyasi';
-    
+
     protected static ?string $navigationGroup = 'Transaksi';
-    
+
     protected static ?string $recordTitleAttribute = 'code';
-    
+
     protected static ?string $slug = 'konsinyasi';
 
     public static function form(Form $form): Form
@@ -40,34 +42,28 @@ class ConsignmentResource extends Resource
                             ->relationship('store', 'name')
                             ->searchable()
                             ->preload()
-                            ->required()
-                            ->createOptionForm([
-                                Forms\Components\TextInput::make('name')
-                                    ->label('Nama Toko')
-                                    ->required(),
-                                Forms\Components\TextInput::make('owner_name')
-                                    ->label('Pemilik')
-                                    ->required(),
-                                Forms\Components\TextInput::make('phone')
-                                    ->label('Telepon')
-                                    ->tel()
-                                    ->required(),
-                            ])
-                            ->createOptionAction(function (Forms\Components\Actions\Action $action) {
-                                return $action
-                                    ->modalHeading('Buat Toko Baru')
-                                    ->modalButton('Buat Toko')
-                                    ->modalWidth('md');
-                            }),
-                        Forms\Components\Select::make('product_id')
-                            ->label('Produk')
-                            ->relationship('product', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->required()
-                            ->createOptionForm([
-                                Forms\Components\TextInput::make('name')
-                                    ->label('Nama Produk')
+                            ->required(),
+                        Forms\Components\Repeater::make('productItems')
+                            ->label('Daftar Produk')
+                            ->relationship()
+                            ->schema([
+                                Forms\Components\Select::make('product_id')
+                                    ->label('Produk')
+                                    ->options(\App\Models\Product::pluck('name', 'id')->toArray())
+                                    ->searchable()
+                                    ->preload()
+                                    ->required()
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                        if ($product = \App\Models\Product::find($state)) {
+                                            $set('name', $product->name);
+                                            $set('code', $product->code);
+                                            $set('price', $product->price);
+                                            $set('product_id', $state);
+                                        }
+                                    }),
+                                Forms\Components\Hidden::make('name')
+                                    ->label('nama')
                                     ->required(),
                                 Forms\Components\TextInput::make('code')
                                     ->label('Kode Produk')
@@ -76,18 +72,22 @@ class ConsignmentResource extends Resource
                                     ->label('Harga')
                                     ->numeric()
                                     ->required(),
+                                Forms\Components\TextInput::make('qty')
+                                    ->label('Jumlah')
+                                    ->numeric()
+                                    ->default(1)
+                                    ->minValue(1)
+                                    ->required(),
+                                Forms\Components\Textarea::make('description')
+                                    ->label('Deskripsi')
+                                    ->columnSpanFull(),
                             ])
-                            ->createOptionAction(function (Forms\Components\Actions\Action $action) {
-                                return $action
-                                    ->modalHeading('Buat Produk Baru')
-                                    ->modalButton('Buat Produk')
-                                    ->modalWidth('md');
-                            }),
-                        Forms\Components\TextInput::make('quantity')
-                            ->label('Jumlah')
-                            ->numeric()
-                            ->minValue(1)
-                            ->required(),
+                            ->columns(2)
+                            ->defaultItems(1)
+                            ->reorderable()
+                            ->collapsible()
+                            ->columnSpanFull(),
+
                         Forms\Components\DatePicker::make('consignment_date')
                             ->label('Tanggal Konsinyasi')
                             ->default(now())
@@ -100,8 +100,7 @@ class ConsignmentResource extends Resource
                             ->label('Status')
                             ->options([
                                 'active' => 'Aktif',
-                                'returned' => 'Dikembalikan',
-                                'sold' => 'Terjual',
+                                'done' => 'Selesai'
                             ])
                             ->default('active')
                             ->required(),
@@ -129,14 +128,26 @@ class ConsignmentResource extends Resource
                     ->label('Toko')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('product.name')
+                Tables\Columns\TextColumn::make('productItems.name')
                     ->label('Produk')
                     ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('quantity')
+                    ->formatStateUsing(fn($record) => $record->productItems->map(fn($item) => $item->name)->join(', '))
+                    ->wrap(),
+                Tables\Columns\TextColumn::make('productItems.qty')
                     ->label('Jumlah')
                     ->numeric()
-                    ->sortable(),
+                    ->summarize([
+                        Tables\Columns\Summarizers\Sum::make()
+                    ])
+                    ->formatStateUsing(fn($record) => $record->productItems->sum('qty')),
+                Tables\Columns\TextColumn::make('productItems.price')
+                    ->label('Harga')
+                    ->money('IDR')
+                    ->formatStateUsing(fn($record) => $record->productItems->sum(fn($item) => $item->price * $item->qty))
+                    ->summarize([
+                        Tables\Columns\Summarizers\Sum::make()
+                            ->money('IDR')
+                    ]),
                 Tables\Columns\TextColumn::make('consignment_date')
                     ->label('Tgl Konsinyasi')
                     ->date('d M Y')
@@ -145,18 +156,18 @@ class ConsignmentResource extends Resource
                     ->label('Tgl Ambil')
                     ->date('d M Y')
                     ->sortable()
-                    ->color(fn ($record) => $record->pickup_date < now() ? 'danger' : null)
-                    ->description(fn ($record) => $record->pickup_date->diffForHumans()),
+                    ->color(fn($record) => $record->pickup_date < now() ? 'danger' : null)
+                    ->description(fn($record) => $record->pickup_date->diffForHumans()),
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'active' => 'success',
                         'returned' => 'warning',
                         'sold' => 'primary',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
                         'active' => 'Aktif',
                         'returned' => 'Dikembalikan',
                         'sold' => 'Terjual',
@@ -207,6 +218,69 @@ class ConsignmentResource extends Resource
         return [
             //
         ];
+    }
+
+    protected function handleRecordCreation(array $data): Consignment
+    {
+        $productItems = $data['productItems'] ?? [];
+        unset($data['productItems']);
+
+        /** @var Consignment $consignment */
+        $consignment = parent::handleRecordCreation($data);
+
+        // Create product items
+        foreach ($productItems as $item) {
+            if (isset($item['product_id'])) {
+                $consignment->productItems()->create([
+                    'product_id' => $item['product_id'],
+                    'name' => $item['name'],
+                    'code' => $item['code'],
+                    'price' => $item['price'],
+                    'qty' => $item['qty'],
+                    'description' => $item['description'] ?? null,
+                    'photo_path' => $item['photo_path'] ?? null,
+                ]);
+            }
+        }
+
+        return $consignment;
+    }
+
+    protected function handleRecordUpdate(Consignment $record, array $data): Consignment
+    {
+        $productItems = $data['productItems'] ?? [];
+        unset($data['productItems']);
+
+        /** @var Consignment $record */
+        $record = parent::handleRecordUpdate($record, $data);
+
+        // Get existing product item IDs
+        $existingIds = $record->productItems()->pluck('id')->toArray();
+        $updatedIds = [];
+
+        // Update or create product items
+        foreach ($productItems as $item) {
+            if (isset($item['product_id'])) {
+                $productItem = $record->productItems()->updateOrCreate(
+                    ['id' => $item['id'] ?? null],
+                    [
+                        'product_id' => $item['product_id'],
+                        'name' => $item['name'],
+                        'code' => $item['code'],
+                        'price' => $item['price'],
+                        'qty' => $item['qty'],
+                        'description' => $item['description'] ?? null,
+                        'photo_path' => $item['photo_path'] ?? null,
+                    ]
+                );
+                $updatedIds[] = $productItem->id;
+            }
+        }
+
+        // Delete removed product items
+        $record->productItems()->whereNotIn('id', $updatedIds)->delete();
+
+        return $record;
     }
 
     public static function getPages(): array
