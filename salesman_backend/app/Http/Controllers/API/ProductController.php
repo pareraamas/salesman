@@ -187,14 +187,7 @@ class ProductController extends BaseController
      *     @OA\RequestBody(
      *         required=true,
      *         description="Data produk yang akan dibuat",
-     *         @OA\JsonContent(
-     *             required={"name", "price", "weight"},
-     *             @OA\Property(property="name", type="string", example="Nama Produk", description="Nama produk"),
-     *             @OA\Property(property="description", type="string", example="Deskripsi produk", nullable=true, description="Deskripsi produk"),
-     *             @OA\Property(property="price", type="number", format="float", example=100000, description="Harga produk"),
-     *             @OA\Property(property="weight", type="number", format="float", example=1.5, description="Berat produk dalam kg"),
-     *             @OA\Property(property="photo", type="string", format="binary", description="Foto produk (format: jpg,jpeg,png|max:2048)")
-     *         )
+     *         @OA\JsonContent(ref="#/components/schemas/ProductInput")
      *     ),
      *     @OA\Response(
      *         response=201,
@@ -370,14 +363,7 @@ class ProductController extends BaseController
      *     @OA\RequestBody(
      *         required=true,
      *         description="Data produk yang akan diperbarui",
-     *         @OA\JsonContent(
-     *             required={"name", "price", "weight"},
-     *             @OA\Property(property="name", type="string", example="Nama Produk", description="Nama produk"),
-     *             @OA\Property(property="description", type="string", example="Deskripsi produk", nullable=true, description="Deskripsi produk"),
-     *             @OA\Property(property="price", type="number", format="float", example=100000, description="Harga produk"),
-     *             @OA\Property(property="weight", type="number", format="float", example=1.5, description="Berat produk dalam kg"),
-     *             @OA\Property(property="photo", type="string", format="binary", description="Foto produk (format: jpg,jpeg,png|max:2048)")
-     *         )
+     *         @OA\JsonContent(ref="#/components/schemas/ProductInput")
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -569,24 +555,18 @@ class ProductController extends BaseController
     public function destroy(Product $product)
     {
         try {
-            // Check if product has related consignments
-            $hasConsignments = Consignment::where('product_id', $product->id)->exists();
-            if ($hasConsignments) {
-                return $this->sendError(
-                    'Tidak dapat menghapus produk yang memiliki riwayat konsinyasi',
-                    null,
-                    HttpResponse::HTTP_BAD_REQUEST
-                );
-            }
+            // Prevent delete if product used in any consignment items or transaction items
+            $usedInConsignments = \App\Models\ProductItem::where('product_id', $product->id)
+                ->whereNull('transaction_id')
+                ->exists();
 
-            // Check if product has related transactions through consignments
-            $hasTransactions = Transaction::whereHas('consignment', function ($q) use ($product) {
-                $q->where('product_id', $product->id);
-            })->exists();
+            $usedInTransactions = \App\Models\ProductItem::where('product_id', $product->id)
+                ->whereNotNull('transaction_id')
+                ->exists();
 
-            if ($hasTransactions) {
+            if ($usedInConsignments || $usedInTransactions) {
                 return $this->sendError(
-                    'Tidak dapat menghapus produk yang memiliki riwayat transaksi',
+                    'Tidak dapat menghapus produk yang telah digunakan pada konsinyasi atau transaksi',
                     null,
                     HttpResponse::HTTP_BAD_REQUEST
                 );

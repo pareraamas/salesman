@@ -189,30 +189,14 @@ class StoreController extends BaseController
      *     @OA\RequestBody(
      *         required=true,
      *         description="Data toko yang akan dibuat",
-     *         @OA\JsonContent(
-     *             required={"name", "owner_name", "phone", "address"},
-     *             @OA\Property(property="name", type="string", example="Toko Baru", description="Nama toko"),
-     *             @OA\Property(property="owner_name", type="string", example="Nama Pemilik", description="Nama pemilik toko"),
-     *             @OA\Property(property="phone", type="string", example="081234567890", description="Nomor telepon toko"),
-     *             @OA\Property(property="address", type="string", example="Alamat lengkap toko", description="Alamat toko"),
-     *             @OA\Property(property="photo", type="string", format="binary", description="Foto toko (format: jpg,jpeg,png|max:2048)")
-     *         )
+     *         @OA\JsonContent(ref="#/components/schemas/StoreInput")
      *     ),
      *     @OA\Response(
      *         response=201,
      *         description="Toko berhasil dibuat",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="data", type="object",
-     *                 @OA\Property(property="id", type="integer", example=1, description="ID toko"),
-     *                 @OA\Property(property="name", type="string", example="Toko Baru", description="Nama toko"),
-     *                 @OA\Property(property="owner_name", type="string", example="Nama Pemilik", description="Nama pemilik toko"),
-     *                 @OA\Property(property="phone", type="string", example="081234567890", description="Nomor telepon toko"),
-     *                 @OA\Property(property="address", type="string", example="Alamat lengkap toko", description="Alamat toko"),
-     *                 @OA\Property(property="photo_path", type="string", example="stores/abc123.jpg", nullable=true, description="Path foto toko"),
-     *                 @OA\Property(property="created_at", type="string", format="date-time", description="Waktu dibuat"),
-     *                 @OA\Property(property="updated_at", type="string", format="date-time", description="Waktu diperbarui")
-     *             ),
+     *             @OA\Property(property="data", ref="#/components/schemas/Store"),
      *             @OA\Property(property="message", type="string", example="Toko berhasil dibuat"),
      *             @OA\Property(property="meta", type="object", example=null),
      *             @OA\Property(property="code", type="integer", example=201)
@@ -272,7 +256,7 @@ class StoreController extends BaseController
      *
      * @OA\Get(
      *     path="/api/stores/{id}",
-     *     operationId="getStoreById",
+     *     operationId="getStoreById_1",
      *     tags={"Toko"},
      *     summary="Mendapatkan detail toko",
      *     description="Mengembalikan detail toko berdasarkan ID",
@@ -380,35 +364,7 @@ class StoreController extends BaseController
         }
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/stores/{id}",
-     *     operationId="getStoreById",
-     *     tags={"Stores"},
-     *     summary="Get store details",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         description="Store ID",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Store retrieved successfully",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="data", ref="#/components/schemas/Store"),
-     *             @OA\Property(property="message", type="string", example="Store retrieved successfully")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Store not found"
-     *     )
-     * )
-     */
+    /** */
     public function show(Store $store)
     {
         try {
@@ -459,29 +415,14 @@ class StoreController extends BaseController
      *     @OA\RequestBody(
      *         required=true,
      *         description="Data toko yang akan diperbarui",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="name", type="string", example="Toko Baru", description="Nama toko"),
-     *             @OA\Property(property="owner_name", type="string", example="Nama Pemilik", description="Nama pemilik toko"),
-     *             @OA\Property(property="phone", type="string", example="081234567890", description="Nomor telepon toko"),
-     *             @OA\Property(property="address", type="string", example="Alamat lengkap toko", description="Alamat toko"),
-     *             @OA\Property(property="photo", type="string", format="binary", description="Foto toko (format: jpg,jpeg,png|max:2048)")
-     *         )
+     *         @OA\JsonContent(ref="#/components/schemas/StoreInput")
      *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Toko berhasil diperbarui",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="data", type="object",
-     *                 @OA\Property(property="id", type="integer", example=1, description="ID toko"),
-     *                 @OA\Property(property="name", type="string", example="Toko Baru", description="Nama toko"),
-     *                 @OA\Property(property="owner_name", type="string", example="Nama Pemilik", description="Nama pemilik toko"),
-     *                 @OA\Property(property="phone", type="string", example="081234567890", description="Nomor telepon toko"),
-     *                 @OA\Property(property="address", type="string", example="Alamat lengkap toko", description="Alamat toko"),
-     *                 @OA\Property(property="photo_path", type="string", example="stores/abc123.jpg", nullable=true, description="Path foto toko"),
-     *                 @OA\Property(property="created_at", type="string", format="date-time", description="Waktu dibuat"),
-     *                 @OA\Property(property="updated_at", type="string", format="date-time", description="Waktu diperbarui")
-     *             ),
+     *             @OA\Property(property="data", ref="#/components/schemas/Store"),
      *             @OA\Property(property="message", type="string", example="Toko berhasil diperbarui"),
      *             @OA\Property(property="meta", type="object", example=null),
      *             @OA\Property(property="code", type="integer", example=200)
