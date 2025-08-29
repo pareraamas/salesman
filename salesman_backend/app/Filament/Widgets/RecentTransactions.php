@@ -19,7 +19,7 @@ class RecentTransactions extends BaseWidget
         return $table
             ->query(
                 Transaction::query()
-                    ->with(['consignment.store', 'consignment.product'])
+                    ->with(['consignment.store', 'items'])
                     ->latest()
                     ->limit(5)
             )
@@ -28,29 +28,35 @@ class RecentTransactions extends BaseWidget
                     ->label('Kode')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('transaction_date')
+                    ->label('Tanggal')
+                    ->date('d M Y H:i')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('consignment.store.name')
                     ->label('Toko')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('consignment.product.name')
-                    ->label('Produk')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('sold_quantity')
-                    ->label('Terjual')
+                Tables\Columns\TextColumn::make('items_count')
+                    ->label('Jumlah Item')
+                    ->counts('items')
+                    ->badge()
+                    ->color('primary'),
+                Tables\Columns\TextColumn::make('total_sold')
+                    ->label('Total Terjual')
+                    ->state(fn ($record) => $record->items->sum('sales'))
                     ->badge()
                     ->color('success')
-                    ->formatStateUsing(fn($state) => $state > 0 ? $state : '-')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('returned_quantity')
-                    ->label('Dikembalikan')
+                Tables\Columns\TextColumn::make('total_returned')
+                    ->label('Total Dikembalikan')
+                    ->state(fn ($record) => $record->items->sum('return'))
                     ->badge()
                     ->color('warning')
-                    ->formatStateUsing(fn($state) => $state > 0 ? $state : '-')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('transaction_date')
-                    ->label('Tanggal')
-                    ->dateTime('d M Y H:i')
+                Tables\Columns\TextColumn::make('total_amount')
+                    ->label('Total')
+                    ->money('IDR')
+                    ->state(fn ($record) => $record->items->sum(fn($item) => $item->price * $item->sales))
                     ->sortable(),
             ])
             ->actions([

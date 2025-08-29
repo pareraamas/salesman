@@ -3,8 +3,10 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Consignment;
+use App\Models\ProductItem;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Number;
 
 class ConsignmentStats extends BaseWidget
 {
@@ -12,8 +14,11 @@ class ConsignmentStats extends BaseWidget
     {
         $total = Consignment::count();
         $active = Consignment::where('status', 'active')->count();
-        $sold = Consignment::where('status', 'sold')->count();
-        $returned = Consignment::where('status', 'returned')->count();
+        $done = Consignment::where('status', 'done')->count();
+        
+        $totalItems = ProductItem::count();
+        $soldItems = ProductItem::where('sales', '>', 0)->sum('sales');
+        $returnedItems = ProductItem::where('return', '>', 0)->sum('return');
 
         return [
             Stat::make('Total Konsinyasi', $total)
@@ -26,22 +31,23 @@ class ConsignmentStats extends BaseWidget
                 ->description('Konsinyasi yang masih aktif')
                 ->descriptionIcon('heroicon-o-arrow-path')
                 ->color('success')
-                ->chart([5, 10, 12, 8, 15, 12, 8])
                 ->url(route('filament.admin.resources.konsinyasi.index', ['tableFilters[status][value]' => 'active'])),
 
-            Stat::make('Terjual', $sold)
-                ->description('Konsinyasi yang sudah terjual')
-                ->descriptionIcon('heroicon-o-banknotes')
-                ->color('primary')
-                ->chart([2, 3, 4, 5, 6, 7, 8])
-                ->url(route('filament.admin.resources.konsinyasi.index', ['tableFilters[status][value]' => 'sold'])),
-
-            Stat::make('Dikembalikan', $returned)
-                ->description('Konsinyasi yang dikembalikan')
+            Stat::make('Selesai', $done)
+                ->description('Konsinyasi yang sudah selesai')
+                ->descriptionIcon('heroicon-o-check-circle')
+                ->color('success')
+                ->url(route('filament.admin.resources.konsinyasi.index', ['tableFilters[status][value]' => 'done'])),
+                
+            Stat::make('Barang Terjual', $soldItems)
+                ->description('Total barang terjual')
+                ->descriptionIcon('heroicon-o-shopping-bag')
+                ->color('primary'),
+                
+            Stat::make('Barang Dikembalikan', $returnedItems)
+                ->description('Total barang dikembalikan')
                 ->descriptionIcon('heroicon-o-arrow-uturn-left')
-                ->color('warning')
-                ->chart([8, 7, 6, 5, 4, 3, 2])
-                ->url(route('filament.admin.resources.konsinyasi.index', ['tableFilters[status][value]' => 'returned'])),
+                ->color('warning'),
         ];
     }
 

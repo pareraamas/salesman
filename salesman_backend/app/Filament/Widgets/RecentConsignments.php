@@ -20,7 +20,7 @@ class RecentConsignments extends BaseWidget
         return $table
             ->query(
                 Consignment::query()
-                    ->with(['store', 'product'])
+                    ->with(['store', 'productItems'])
                     ->latest()
                     ->limit(5)
             )
@@ -33,12 +33,13 @@ class RecentConsignments extends BaseWidget
                     ->label('Toko')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('product.name')
-                    ->label('Produk')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('quantity')
-                    ->label('Jumlah')
+                Tables\Columns\TextColumn::make('productItems')
+                    ->label('Jumlah Produk')
+                    ->formatStateUsing(fn ($record) => $record->productItems->count() . ' item')
+                    ->badge(),
+                Tables\Columns\TextColumn::make('total_items')
+                    ->label('Total Barang')
+                    ->state(fn ($record) => $record->productItems->sum('qty'))
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('consignment_date')
@@ -49,23 +50,26 @@ class RecentConsignments extends BaseWidget
                     ->label('Tgl Ambil')
                     ->date('d M Y')
                     ->sortable()
-                    ->color(fn($record) => $record->pickup_date < now() ? 'danger' : null)
-                    ->description(fn($record) => $record->pickup_date->diffForHumans()),
+                    ->color(fn ($record) => $record->pickup_date < now() ? 'danger' : null)
+                    ->description(fn ($record) => $record->pickup_date->diffForHumans()),
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'active' => 'success',
                         'returned' => 'warning',
                         'sold' => 'primary',
+                        'done' => 'success',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         'active' => 'Aktif',
                         'returned' => 'Dikembalikan',
                         'sold' => 'Terjual',
+                        'done' => 'Selesai',
                         default => $state,
-                    }),
+                    })
+                    ->sortable(),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()
