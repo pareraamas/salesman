@@ -34,12 +34,15 @@ class StoreTransactionRequest extends FormRequest
                     }
                 },
             ],
-            'sold_quantity' => 'required|integer|min:0',
-            'returned_quantity' => 'required|integer|min:0',
             'transaction_date' => 'nullable|date|before_or_equal:today',
+            'notes' => 'nullable|string|max:1000',
             'sold_items_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'returned_items_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'notes' => 'nullable|string|max:1000',
+            'items' => 'required|array|min:1',
+            'items.*.product_item_id' => 'required|exists:product_items,id',
+            'items.*.sold' => 'required|integer|min:0',
+            'items.*.returned' => 'required|integer|min:0',
+            'items.*.price' => 'nullable|numeric|min:0',
         ];
     }
 
@@ -54,26 +57,33 @@ class StoreTransactionRequest extends FormRequest
         $validator->after(function ($validator) {
             $data = $validator->getData();
             $consignment = Consignment::find($data['consignment_id'] ?? null);
-            
             if (!$consignment) {
                 return;
             }
 
-            // Calculate remaining quantity
-            $remaining = $consignment->quantity - 
-                        $consignment->transactions()->sum('sold_quantity') - 
-                        $consignment->transactions()->sum('returned_quantity');
-            
-            // For new transaction, add the current quantities being processed
-            $sold = $data['sold_quantity'] ?? 0;
-            $returned = $data['returned_quantity'] ?? 0;
-            $total = $sold + $returned;
-            
-            if ($total > $remaining) {
-                $validator->errors()->add(
-                    'quantity', 
-                    "Total jumlah terjual dan dikembalikan ({$total}) melebihi sisa stok yang tersedia ({$remaining})."
-                );
+            // Validate each item against product_items capacity
+            foreach (($data['items'] ?? []) as $index => $item) {
+                $productItemId = $item['product_item_id'] ?? null;
+                if (!$productItemId) continue;
+
+                $pi = \App\Models\ProductItem::find($productItemId);
+                if (!$pi || $pi->consignment_id != $consignment->id) {
+                    $validator->errors()->add("items.$index.product_item_id", 'Produk tidak valid untuk konsinyasi ini.');
+                    continue;
+                }
+
+                $sold = (int) ($item['sold'] ?? 0);
+                $returned = (int) ($item['returned'] ?? 0);
+                if ($sold < 0 || $returned < 0) {
+                    $validator->errors()->add("items.$index", 'Nilai tidak boleh negatif.');
+                }
+
+                if (($sold + $returned) > $pi->qty) {
+                    $validator->errors()->add(
+                        "items.$index",
+                        "Total terjual+dikembalikan melebihi stok item ({$pi->qty})."
+                    );
+                }
             }
         });
     }

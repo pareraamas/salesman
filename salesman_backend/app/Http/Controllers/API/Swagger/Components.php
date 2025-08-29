@@ -89,9 +89,8 @@ namespace App\Http\Controllers\API\Swagger;
  *     @OA\Schema(
  *         schema="Consignment",
  *         @OA\Property(property="id", type="integer", example=1),
+ *         @OA\Property(property="code", type="string", example="CONS-00001"),
  *         @OA\Property(property="store_id", type="integer", example=1),
- *         @OA\Property(property="product_id", type="integer", example=1),
- *         @OA\Property(property="quantity", type="integer", example=10),
  *         @OA\Property(property="consignment_date", type="string", format="date", example="2025-07-29"),
  *         @OA\Property(property="pickup_date", type="string", format="date", example="2025-08-05"),
  *         @OA\Property(property="status", type="string", enum={"active", "sold", "returned"}, example="active"),
@@ -104,46 +103,78 @@ namespace App\Http\Controllers\API\Swagger;
  *         @OA\Property(property="created_at", type="string", format="date-time"),
  *         @OA\Property(property="updated_at", type="string", format="date-time"),
  *         @OA\Property(property="store", ref="#/components/schemas/Store"),
- *         @OA\Property(property="product", ref="#/components/schemas/Product")
+ *         @OA\Property(property="productItems", type="array",
+ *             @OA\Items(type="object",
+ *                 @OA\Property(property="id", type="integer", example=1),
+ *                 @OA\Property(property="product_id", type="integer", example=1),
+ *                 @OA\Property(property="name", type="string", example="Produk A"),
+ *                 @OA\Property(property="code", type="string", example="PRD-001"),
+ *                 @OA\Property(property="price", type="number", format="float", example=100000),
+ *                 @OA\Property(property="qty", type="integer", example=10),
+ *                 @OA\Property(property="sales", type="integer", example=0),
+ *                 @OA\Property(property="return", type="integer", example=0)
+ *             )
+ *         )
  *     ),
  *     @OA\Schema(
  *         schema="ConsignmentInput",
- *         required={"store_id", "product_id", "quantity", "consignment_date", "pickup_date", "status"},
+ *         required={"store_id", "consignment_date", "pickup_date", "status"},
  *         @OA\Property(property="store_id", type="integer", example=1, description="ID of the store"),
- *         @OA\Property(property="product_id", type="integer", example=1, description="ID of the product"),
- *         @OA\Property(property="quantity", type="integer", example=10, minimum=1, description="Quantity of items consigned"),
  *         @OA\Property(property="consignment_date", type="string", format="date", example="2025-07-29", description="Date when items were consigned"),
  *         @OA\Property(property="pickup_date", type="string", format="date", example="2025-08-05", description="Scheduled pickup date"),
  *         @OA\Property(property="status", type="string", enum={"active", "sold", "returned"}, example="active", description="Current status of consignment"),
  *         @OA\Property(property="photo", type="string", format="binary", description="Consignment photo file"),
- *         @OA\Property(property="notes", type="string", maxLength=1000, example="Catatan tambahan", nullable=true)
+ *         @OA\Property(property="notes", type="string", maxLength=1000, example="Catatan tambahan", nullable=true),
+ *         @OA\Property(property="productItems", type="array",
+ *             @OA\Items(type="object",
+ *                 required={"product_id","name","code","price","qty"},
+ *                 @OA\Property(property="product_id", type="integer", example=1),
+ *                 @OA\Property(property="name", type="string", example="Produk A"),
+ *                 @OA\Property(property="code", type="string", example="PRD-001"),
+ *                 @OA\Property(property="price", type="number", format="float", example=100000),
+ *                 @OA\Property(property="qty", type="integer", example=10)
+ *             )
+ *         )
  *     ),
  *     @OA\Schema(
  *         schema="Transaction",
  *         @OA\Property(property="id", type="integer", example=1),
  *         @OA\Property(property="consignment_id", type="integer", example=1),
- *         @OA\Property(property="sold_quantity", type="integer", example=5),
- *         @OA\Property(property="returned_quantity", type="integer", example=2),
  *         @OA\Property(property="transaction_date", type="string", format="date", example="2025-08-01"),
  *         @OA\Property(property="sold_items_photo_path", type="string", example="transactions/sold/photo.jpg"),
  *         @OA\Property(property="sold_items_photo_url", type="string", example="http://example.com/storage/transactions/sold/photo.jpg"),
  *         @OA\Property(property="returned_items_photo_path", type="string", example="transactions/returned/photo.jpg"),
  *         @OA\Property(property="returned_items_photo_url", type="string", example="http://example.com/storage/transactions/returned/photo.jpg"),
  *         @OA\Property(property="notes", type="string", example="Pembayaran lunas"),
+ *         @OA\Property(property="items", type="array",
+ *             @OA\Items(type="object",
+ *                 @OA\Property(property="product_item_id", type="integer", example=10),
+ *                 @OA\Property(property="sold", type="integer", example=3),
+ *                 @OA\Property(property="returned", type="integer", example=0),
+ *                 @OA\Property(property="price", type="number", format="float", example=100000)
+ *             )
+ *         ),
  *         @OA\Property(property="created_at", type="string", format="date-time"),
  *         @OA\Property(property="updated_at", type="string", format="date-time"),
  *         @OA\Property(property="consignment", ref="#/components/schemas/Consignment")
  *     ),
  *     @OA\Schema(
  *         schema="TransactionInput",
- *         required={"consignment_id", "sold_quantity", "returned_quantity"},
+ *         required={"consignment_id", "items"},
  *         @OA\Property(property="consignment_id", type="integer", example=1, description="ID of the consignment"),
- *         @OA\Property(property="sold_quantity", type="integer", example=5, minimum=0, description="Number of items sold"),
- *         @OA\Property(property="returned_quantity", type="integer", example=2, minimum=0, description="Number of items returned"),
  *         @OA\Property(property="transaction_date", type="string", format="date", example="2025-08-01", description="Date of the transaction"),
  *         @OA\Property(property="sold_items_photo", type="string", format="binary", description="Photo of sold items", nullable=true),
  *         @OA\Property(property="returned_items_photo", type="string", format="binary", description="Photo of returned items", nullable=true),
- *         @OA\Property(property="notes", type="string", maxLength=1000, example="Pembayaran lunas", nullable=true)
+ *         @OA\Property(property="notes", type="string", maxLength=1000, example="Pembayaran lunas", nullable=true),
+ *         @OA\Property(property="items", type="array",
+ *             @OA\Items(type="object",
+ *                 required={"product_item_id","sold","returned"},
+ *                 @OA\Property(property="product_item_id", type="integer", example=10),
+ *                 @OA\Property(property="sold", type="integer", example=3),
+ *                 @OA\Property(property="returned", type="integer", example=0),
+ *                 @OA\Property(property="price", type="number", format="float", example=100000)
+ *             )
+ *         )
  *     ),
  *     @OA\Schema(
  *         schema="LoginRequest",

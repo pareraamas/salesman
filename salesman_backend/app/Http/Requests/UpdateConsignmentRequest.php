@@ -25,8 +25,6 @@ class UpdateConsignmentRequest extends FormRequest
     {
         return [
             'store_id' => 'sometimes|exists:stores,id',
-            'product_id' => 'sometimes|exists:products,id',
-            'quantity' => 'sometimes|integer|min:1',
             'consignment_date' => 'sometimes|date',
             'pickup_date' => 'sometimes|date|after:consignment_date',
             'status' => [
@@ -39,6 +37,14 @@ class UpdateConsignmentRequest extends FormRequest
             ],
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'notes' => 'nullable|string|max:1000',
+
+            'productItems' => 'sometimes|array|min:1',
+            'productItems.*.id' => 'sometimes|exists:product_items,id',
+            'productItems.*.product_id' => 'required_without:productItems.*.id|exists:products,id',
+            'productItems.*.name' => 'required_without:productItems.*.id|string|max:255',
+            'productItems.*.code' => 'required_without:productItems.*.id|string|max:50',
+            'productItems.*.price' => 'required_without:productItems.*.id|numeric|min:0',
+            'productItems.*.qty' => 'required_without:productItems.*.id|integer|min:1',
         ];
     }
 
@@ -51,9 +57,10 @@ class UpdateConsignmentRequest extends FormRequest
     {
         return [
             'store_id.exists' => 'Toko tidak ditemukan',
-            'product_id.exists' => 'Produk tidak ditemukan',
-            'quantity.integer' => 'Jumlah harus berupa angka',
-            'quantity.min' => 'Jumlah minimal 1',
+            'productItems.*.id.exists' => 'Item konsinyasi tidak ditemukan',
+            'productItems.*.product_id.exists' => 'Produk tidak ditemukan',
+            'productItems.*.qty.integer' => 'Jumlah harus berupa angka',
+            'productItems.*.qty.min' => 'Jumlah minimal 1',
             'consignment_date.date' => 'Format tanggal penitipan tidak valid',
             'pickup_date.date' => 'Format tanggal pengambilan tidak valid',
             'pickup_date.after' => 'Tanggal pengambilan harus setelah tanggal penitipan',

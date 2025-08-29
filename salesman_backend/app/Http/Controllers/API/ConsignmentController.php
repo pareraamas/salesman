@@ -156,16 +156,23 @@ class ConsignmentController extends BaseController
     public function listAll()
     {
         try {
-            $consignments = Consignment::select('id', 'code', 'store_id', 'product_id')
-                ->with(['store:id,name', 'product:id,name'])
+            $consignments = Consignment::select('id', 'code', 'store_id')
+                ->with(['store:id,name', 'productItems.product:id,name'])
                 ->orderBy('code')
                 ->get()
                 ->map(function ($consignment) {
+                    $productNames = $consignment->productItems
+                        ->pluck('product.name')
+                        ->filter()
+                        ->unique()
+                        ->values()
+                        ->join(', ');
+
                     return [
                         'id' => $consignment->id,
                         'code' => $consignment->code,
-                        'store_name' => $consignment->store->name,
-                        'product_name' => $consignment->product->name
+                        'store_name' => optional($consignment->store)->name,
+                        'products' => $productNames,
                     ];
                 });
 
@@ -187,15 +194,19 @@ class ConsignmentController extends BaseController
     public function index(Request $request)
     {
         try {
-            $query = Consignment::with(['store', 'product']);
+            $query = Consignment::with(['store', 'productItems.product']);
 
             // Apply filters
             if ($request->has('store_id')) {
                 $query->where('store_id', $request->store_id);
             }
 
+            // Removed product_id direct filter; filter via related product items instead
             if ($request->has('product_id')) {
-                $query->where('product_id', $request->product_id);
+                $productId = $request->product_id;
+                $query->whereHas('productItems', function ($q) use ($productId) {
+                    $q->where('product_id', $productId);
+                });
             }
 
             if ($request->has('status')) {
@@ -229,6 +240,57 @@ class ConsignmentController extends BaseController
     }
 
     /**
+     * @OA\Get(
+     *     path="/api/consignments/active",
+     *     tags={"Konsinyasi"},
+     *     summary="Daftar konsinyasi aktif",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(response=200, description="OK")
+     * )
+     */
+    public function active(Request $request)
+    {
+        try {
+            $perPage = $request->input('per_page', 15);
+            $data = Consignment::active()
+                ->with(['store', 'productItems.product'])
+                ->latest('consignment_date')
+                ->paginate($perPage);
+
+            return $this->sendResponse($data, 'Daftar konsinyasi aktif berhasil diambil');
+        } catch (\Exception $e) {
+            Log::error('Error retrieving active consignments: ' . $e->getMessage());
+            return $this->sendError('Gagal mengambil konsinyasi aktif', null, HttpResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/consignments/{id}/transactions",
+     *     tags={"Konsinyasi"},
+     *     summary="Daftar transaksi untuk konsinyasi tertentu",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="OK")
+     * )
+     */
+    public function transactions(Request $request, Consignment $consignment)
+    {
+        try {
+            $perPage = $request->input('per_page', 15);
+            $transactions = $consignment->transactions()
+                ->with('items')
+                ->latest('transaction_date')
+                ->paginate($perPage);
+
+            return $this->sendResponse($transactions, 'Daftar transaksi konsinyasi berhasil diambil');
+        } catch (\Exception $e) {
+            Log::error('Error retrieving consignment transactions: ' . $e->getMessage());
+            return $this->sendError('Gagal mengambil daftar transaksi', null, HttpResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
      * @OA\Post(
      *     path="/api/consignments",
      *     operationId="storeConsignment",
@@ -239,15 +301,7 @@ class ConsignmentController extends BaseController
      *     @OA\RequestBody(
      *         required=true,
      *         description="Data konsinyasi yang akan dibuat",
-     *         @OA\JsonContent(
-     *             required={"store_id", "product_id", "quantity", "consignment_date"},
-     *             @OA\Property(property="store_id", type="integer", example=1, description="ID toko"),
-     *             @OA\Property(property="product_id", type="integer", example=1, description="ID produk"),
-     *             @OA\Property(property="quantity", type="integer", example=10, description="Jumlah barang"),
-     *             @OA\Property(property="consignment_date", type="string", format="date", example="2025-08-05", description="Tanggal konsinyasi (YYYY-MM-DD)"),
-     *             @OA\Property(property="notes", type="string", example="Catatan tambahan", nullable=true),
-     *             @OA\Property(property="photo", type="string", format="binary", description="Foto bukti konsinyasi (opsional)")
-     *         )
+     *         @OA\JsonContent(ref="#/components/schemas/ConsignmentInput")
      *     ),
      *     @OA\Response(
      *         response=201,
@@ -313,8 +367,27 @@ class ConsignmentController extends BaseController
                 }
             }
 
+            $productItemsPayload = $data['productItems'] ?? [];
+            unset($data['productItems']);
+
             $consignment = Consignment::create($data);
-            $consignment->load(['store', 'product']);
+
+            // Create product items
+            foreach ($productItemsPayload as $item) {
+                \App\Models\ProductItem::create([
+                    'product_id' => $item['product_id'],
+                    'consignment_id' => $consignment->id,
+                    'name' => $item['name'],
+                    'code' => $item['code'],
+                    'price' => $item['price'],
+                    'qty' => $item['qty'],
+                    'description' => $item['description'] ?? null,
+                    'sales' => 0,
+                    'return' => 0,
+                ]);
+            }
+
+            $consignment->load(['store', 'productItems.product']);
 
             return $this->sendResponse(
                 $consignment,
@@ -429,14 +502,7 @@ class ConsignmentController extends BaseController
      *     @OA\RequestBody(
      *         required=true,
      *         description="Data konsinyasi yang akan diperbarui",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="store_id", type="integer", example=1, description="ID toko"),
-     *             @OA\Property(property="product_id", type="integer", example=1, description="ID produk"),
-     *             @OA\Property(property="quantity", type="integer", example=15, description="Jumlah barang"),
-     *             @OA\Property(property="consignment_date", type="string", format="date", example="2025-08-05", description="Tanggal konsinyasi (YYYY-MM-DD)"),
-     *             @OA\Property(property="notes", type="string", example="Catatan tambahan", nullable=true),
-     *             @OA\Property(property="photo", type="string", format="binary", description="Foto bukti konsinyasi (opsional)")
-     *         )
+     *         @OA\JsonContent(ref="#/components/schemas/ConsignmentInput")
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -505,6 +571,8 @@ class ConsignmentController extends BaseController
     {
         try {
             $data = $request->validated();
+            $productItemsPayload = $data['productItems'] ?? null;
+            unset($data['productItems']);
             $oldPhotoPath = null;
 
             // Handle photo upload
@@ -526,7 +594,41 @@ class ConsignmentController extends BaseController
             }
 
             $consignment->update($data);
-            $consignment->load(['store', 'product']);
+
+            // Upsert product items if provided
+            if (is_array($productItemsPayload)) {
+                foreach ($productItemsPayload as $item) {
+                    if (!empty($item['id'])) {
+                        $pi = \App\Models\ProductItem::where('id', $item['id'])
+                            ->where('consignment_id', $consignment->id)
+                            ->first();
+                        if ($pi) {
+                            $pi->update([
+                                'product_id' => $item['product_id'] ?? $pi->product_id,
+                                'name' => $item['name'] ?? $pi->name,
+                                'code' => $item['code'] ?? $pi->code,
+                                'price' => $item['price'] ?? $pi->price,
+                                'qty' => $item['qty'] ?? $pi->qty,
+                                'description' => $item['description'] ?? $pi->description,
+                            ]);
+                        }
+                    } else {
+                        \App\Models\ProductItem::create([
+                            'product_id' => $item['product_id'],
+                            'consignment_id' => $consignment->id,
+                            'name' => $item['name'],
+                            'code' => $item['code'],
+                            'price' => $item['price'],
+                            'qty' => $item['qty'],
+                            'description' => $item['description'] ?? null,
+                            'sales' => 0,
+                            'return' => 0,
+                        ]);
+                    }
+                }
+            }
+
+            $consignment->load(['store', 'productItems.product']);
 
             // Hapus foto lama setelah update berhasil
             if ($oldPhotoPath) {

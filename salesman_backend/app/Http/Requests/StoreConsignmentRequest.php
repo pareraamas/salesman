@@ -25,8 +25,6 @@ class StoreConsignmentRequest extends FormRequest
     {
         return [
             'store_id' => 'required|exists:stores,id',
-            'product_id' => 'required|exists:products,id',
-            'quantity' => 'required|integer|min:1',
             'consignment_date' => 'required|date|before_or_equal:today',
             'pickup_date' => 'required|date|after:consignment_date',
             'status' => [
@@ -39,6 +37,13 @@ class StoreConsignmentRequest extends FormRequest
             ],
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'notes' => 'nullable|string|max:1000',
+
+            'productItems' => 'required|array|min:1',
+            'productItems.*.product_id' => 'required|exists:products,id',
+            'productItems.*.name' => 'required|string|max:255',
+            'productItems.*.code' => 'required|string|max:50',
+            'productItems.*.price' => 'required|numeric|min:0',
+            'productItems.*.qty' => 'required|integer|min:1',
         ];
     }
 
@@ -51,9 +56,14 @@ class StoreConsignmentRequest extends FormRequest
     {
         return [
             'store_id.required' => 'Toko harus dipilih',
-            'product_id.required' => 'Produk harus dipilih',
-            'quantity.required' => 'Jumlah barang harus diisi',
-            'quantity.min' => 'Jumlah barang minimal 1',
+            'productItems.required' => 'Daftar produk harus diisi',
+            'productItems.min' => 'Minimal satu produk harus ditambahkan',
+            'productItems.*.product_id.required' => 'Produk harus dipilih',
+            'productItems.*.name.required' => 'Nama produk harus diisi',
+            'productItems.*.code.required' => 'Kode produk harus diisi',
+            'productItems.*.price.required' => 'Harga produk harus diisi',
+            'productItems.*.qty.required' => 'Jumlah produk harus diisi',
+            'productItems.*.qty.min' => 'Jumlah produk minimal 1',
             'consignment_date.required' => 'Tanggal penitipan harus diisi',
             'consignment_date.before_or_equal' => 'Tanggal penitipan tidak boleh melebihi tanggal hari ini',
             'pickup_date.required' => 'Tanggal pengambilan harus diisi',

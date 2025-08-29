@@ -275,28 +275,40 @@ class TransactionController extends BaseController
             }
 
             $perPage = $request->input('per_page', 15);
-            $transactions = $query->latest('transaction_date')->paginate($perPage);
+            $transactions = $query->with('items')->latest('transaction_date')->paginate($perPage);
 
             return $this->sendResponse(
-                $transactions->map(function ($transaction) {
+                $transactions->through(function ($transaction) {
                     return [
                         'id' => $transaction->id,
                         'consignment_id' => $transaction->consignment_id,
                         'transaction_date' => $transaction->transaction_date,
-                        'sold_quantity' => $transaction->sold_quantity,
-                        'returned_quantity' => $transaction->returned_quantity,
+                        'total_sold' => $transaction->total_sold,
+                        'total_returned' => $transaction->total_returned,
+                        'net_quantity' => $transaction->net_quantity,
+                        'total_amount' => $transaction->total_amount,
                         'notes' => $transaction->notes,
+                        'sold_items_photo_path' => $transaction->sold_items_photo_path,
+                        'returned_items_photo_path' => $transaction->returned_items_photo_path,
                         'created_at' => $transaction->created_at,
                         'updated_at' => $transaction->updated_at,
+                        'items' => $transaction->items->map(function ($item) {
+                            return [
+                                'id' => $item->id,
+                                'product_id' => $item->product_id,
+                                'name' => $item->name,
+                                'code' => $item->code,
+                                'price' => $item->price,
+                                'qty' => $item->qty,
+                                'sold' => $item->sales,
+                                'returned' => $item->return,
+                            ];
+                        }),
                         'consignment' => $transaction->consignment ? [
                             'id' => $transaction->consignment->id,
                             'store' => $transaction->consignment->store ? [
                                 'id' => $transaction->consignment->store->id,
                                 'name' => $transaction->consignment->store->name,
-                            ] : null,
-                            'product' => $transaction->consignment->product ? [
-                                'id' => $transaction->consignment->product->id,
-                                'name' => $transaction->consignment->product->name,
                             ] : null,
                         ] : null,
                     ];
@@ -452,36 +464,30 @@ class TransactionController extends BaseController
                     ->store('transactions/returned', 'public');
             }
 
+            // Create transaction
             $transaction = Transaction::create($data);
-            $transaction->load(['consignment.store', 'consignment.product']);
+            $transaction->load(['consignment.store', 'consignment.product', 'items']);
 
-            // Update consignment status if all items are sold or returned
+            // Attach items to transaction by updating ProductItem rows
+            foreach (($data['items'] ?? []) as $item) {
+                $pi = \App\Models\ProductItem::find($item['product_item_id']);
+                if (!$pi) continue;
+                $pi->transaction_id = $transaction->id;
+                $pi->sales = (int) ($item['sold'] ?? 0);
+                $pi->return = (int) ($item['returned'] ?? 0);
+                if (isset($item['price'])) {
+                    $pi->price = $item['price'];
+                }
+                $pi->save();
+            }
+
+            // Update consignment status based on items
             $this->updateConsignmentStatus($transaction->consignment);
 
+            $transaction->load('items');
+
             return $this->sendResponse(
-                [
-                    'id' => $transaction->id,
-                    'consignment_id' => $transaction->consignment_id,
-                    'transaction_date' => $transaction->transaction_date,
-                    'sold_quantity' => $transaction->sold_quantity,
-                    'returned_quantity' => $transaction->returned_quantity,
-                    'notes' => $transaction->notes,
-                    'sold_items_photo_path' => $transaction->sold_items_photo_path,
-                    'returned_items_photo_path' => $transaction->returned_items_photo_path,
-                    'created_at' => $transaction->created_at,
-                    'updated_at' => $transaction->updated_at,
-                    'consignment' => $transaction->consignment ? [
-                        'id' => $transaction->consignment->id,
-                        'store' => $transaction->consignment->store ? [
-                            'id' => $transaction->consignment->store->id,
-                            'name' => $transaction->consignment->store->name,
-                        ] : null,
-                        'product' => $transaction->consignment->product ? [
-                            'id' => $transaction->consignment->product->id,
-                            'name' => $transaction->consignment->product->name,
-                        ] : null,
-                    ] : null,
-                ],
+                $transaction,
                 'Transaksi berhasil dibuat',
                 HttpResponse::HTTP_CREATED
             );
@@ -591,13 +597,27 @@ class TransactionController extends BaseController
                     'id' => $transaction->id,
                     'consignment_id' => $transaction->consignment_id,
                     'transaction_date' => $transaction->transaction_date,
-                    'sold_quantity' => $transaction->sold_quantity,
-                    'returned_quantity' => $transaction->returned_quantity,
+                    'total_sold' => $transaction->total_sold,
+                    'total_returned' => $transaction->total_returned,
+                    'net_quantity' => $transaction->net_quantity,
+                    'total_amount' => $transaction->total_amount,
                     'notes' => $transaction->notes,
                     'sold_items_photo_path' => $transaction->sold_items_photo_path,
                     'returned_items_photo_path' => $transaction->returned_items_photo_path,
                     'created_at' => $transaction->created_at,
                     'updated_at' => $transaction->updated_at,
+                    'items' => $transaction->items->map(function ($item) {
+                        return [
+                            'id' => $item->id,
+                            'product_id' => $item->product_id,
+                            'name' => $item->name,
+                            'code' => $item->code,
+                            'price' => $item->price,
+                            'qty' => $item->qty,
+                            'sold' => $item->sales,
+                            'returned' => $item->return,
+                        ];
+                    }),
                     'consignment' => $transaction->consignment ? [
                         'id' => $transaction->consignment->id,
                         'store' => $transaction->consignment->store ? [
@@ -606,14 +626,6 @@ class TransactionController extends BaseController
                             'address' => $transaction->consignment->store->address,
                             'phone' => $transaction->consignment->store->phone,
                         ] : null,
-                        'product' => $transaction->consignment->product ? [
-                            'id' => $transaction->consignment->product->id,
-                            'name' => $transaction->consignment->product->name,
-                            'code' => $transaction->consignment->product->code,
-                            'price' => $transaction->consignment->product->price,
-                        ] : null,
-                        'quantity' => $transaction->consignment->quantity,
-                        'remaining_quantity' => $transaction->consignment->remaining_quantity,
                         'status' => $transaction->consignment->status,
                         'notes' => $transaction->consignment->notes,
                     ] : null,
@@ -786,33 +798,35 @@ class TransactionController extends BaseController
             $transaction->update($data);
             $transaction->load(['consignment.store', 'consignment.product']);
 
-            // Update consignment status if all items are sold or returned
+            // If items provided, update ProductItem rows linked to this transaction
+            if (isset($data['items']) && is_array($data['items'])) {
+                foreach ($data['items'] as $item) {
+                    $pi = \App\Models\ProductItem::find($item['product_item_id'] ?? null);
+                    if (!$pi) continue;
+                    if ($pi->transaction_id !== $transaction->id) {
+                        // do not hijack items from other transactions
+                        continue;
+                    }
+                    if (array_key_exists('sold', $item)) {
+                        $pi->sales = (int) $item['sold'];
+                    }
+                    if (array_key_exists('returned', $item)) {
+                        $pi->return = (int) $item['returned'];
+                    }
+                    if (array_key_exists('price', $item)) {
+                        $pi->price = $item['price'];
+                    }
+                    $pi->save();
+                }
+            }
+
+            // Update consignment status based on items
             $this->updateConsignmentStatus($transaction->consignment);
 
+            $transaction->load('items');
+
             return $this->sendResponse(
-                [
-                    'id' => $transaction->id,
-                    'consignment_id' => $transaction->consignment_id,
-                    'transaction_date' => $transaction->transaction_date,
-                    'sold_quantity' => $transaction->sold_quantity,
-                    'returned_quantity' => $transaction->returned_quantity,
-                    'notes' => $transaction->notes,
-                    'sold_items_photo_path' => $transaction->sold_items_photo_path,
-                    'returned_items_photo_path' => $transaction->returned_items_photo_path,
-                    'created_at' => $transaction->created_at,
-                    'updated_at' => $transaction->updated_at,
-                    'consignment' => $transaction->consignment ? [
-                        'id' => $transaction->consignment->id,
-                        'store' => $transaction->consignment->store ? [
-                            'id' => $transaction->consignment->store->id,
-                            'name' => $transaction->consignment->store->name,
-                        ] : null,
-                        'product' => $transaction->consignment->product ? [
-                            'id' => $transaction->consignment->product->id,
-                            'name' => $transaction->consignment->product->name,
-                        ] : null,
-                    ] : null,
-                ],
+                $transaction,
                 'Transaksi berhasil diperbarui',
                 HttpResponse::HTTP_OK
             );
