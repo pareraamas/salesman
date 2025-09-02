@@ -37,7 +37,12 @@ A comprehensive sales management solution with a backend API and mobile applicat
 
 ## 📱 Screenshots
 
+###  Admin
 ![Admin Dashboard](/screenshoot/Jepretan%20Layar%202025-08-29%20pukul%2008.49.02.png)
+###  Summary
+![Summary Dashboard](/screenshoot/Jepretan%20Layar%202025-08-29%20pukul%2008.49.32.png)
+### Mobile
+![Mobile Dashboard](/screenshoot/Jepretan%20Layar%202025-09-02%20pukul%2010.44.23.png)
 
 ## 📁 Project Structure
 
@@ -77,4 +82,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-Made with ❤️ by Your Name
+Made with ❤️ Amas Parera
