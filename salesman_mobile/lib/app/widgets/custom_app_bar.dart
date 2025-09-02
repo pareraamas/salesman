@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:salesman_mobile/core/theme/app_colors.dart';
-import 'package:salesman_mobile/core/theme/app_text_styles.dart';
+import 'package:salesman_mobile/app/core/bindings/theme/app_colors.dart';
+import 'package:salesman_mobile/app/core/bindings/theme/app_text_styles.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -30,17 +30,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       title: Text(
         title,
-        style: AppTextStyles.heading3.copyWith(
-          color: titleColor ?? AppColors.textPrimary,
-          fontWeight: FontWeight.w600,
-        ),
+        style: AppTextStyles.heading3.copyWith(color: titleColor ?? AppColors.textPrimary, fontWeight: FontWeight.w600),
       ),
-      leading: showBackButton
-          ? IconButton(
-              icon: const Icon(Icons.arrow_back_ios, size: 20),
-              onPressed: () => Get.back(),
-            )
-          : null,
+      leading: showBackButton ? IconButton(icon: const Icon(Icons.arrow_back_ios, size: 20), onPressed: () => Get.back()) : null,
       actions: actions,
       elevation: elevation,
       backgroundColor: backgroundColor ?? Colors.white,
@@ -51,9 +43,5 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => Size.fromHeight(
-        bottom != null
-            ? kToolbarHeight + bottom!.preferredSize.height
-            : kToolbarHeight,
-      );
+  Size get preferredSize => Size.fromHeight(bottom != null ? kToolbarHeight + bottom!.preferredSize.height : kToolbarHeight);
 }

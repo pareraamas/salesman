@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:salesman_mobile/core/theme/app_colors.dart';
+import 'package:salesman_mobile/app/core/bindings/theme/app_colors.dart';
 
 class CustomButton extends StatelessWidget {
   final VoidCallback? onPressed;
@@ -43,41 +43,22 @@ class CustomButton extends StatelessWidget {
         ? SizedBox(
             width: 24,
             height: 24,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                isOutlined ? AppColors.primary : Colors.white,
-              ),
-            ),
+            child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(isOutlined ? AppColors.primary : Colors.white)),
           )
         : child;
 
     final buttonStyle = ElevatedButton.styleFrom(
-      backgroundColor: isOutlined
-          ? Colors.transparent
-          : (isDisabled ? AppColors.grey300 : backgroundColor ?? AppColors.primary),
+      backgroundColor: isOutlined ? Colors.transparent : (isDisabled ? AppColors.grey300 : backgroundColor ?? AppColors.primary),
       foregroundColor: textColor ?? (isOutlined ? AppColors.primary : Colors.white),
       padding: padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(borderRadius),
-        side: isOutlined
-            ? BorderSide(
-                color: isDisabled ? AppColors.grey400 : borderColor ?? AppColors.primary,
-                width: borderWidth,
-              )
-            : BorderSide.none,
+        side: isOutlined ? BorderSide(color: isDisabled ? AppColors.grey400 : borderColor ?? AppColors.primary, width: borderWidth) : BorderSide.none,
       ),
       elevation: elevation,
-      minimumSize: Size(
-        isFullWidth ? double.infinity : (width ?? 0),
-        height ?? 48.0,
-      ),
+      minimumSize: Size(isFullWidth ? double.infinity : (width ?? 0), height ?? 48.0),
     );
 
-    return ElevatedButton(
-      onPressed: (isDisabled || isLoading) ? null : onPressed,
-      style: buttonStyle,
-      child: buttonChild,
-    );
+    return ElevatedButton(onPressed: (isDisabled || isLoading) ? null : onPressed, style: buttonStyle, child: buttonChild);
   }
 }

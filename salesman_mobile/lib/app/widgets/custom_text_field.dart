@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:salesman_mobile/core/theme/app_colors.dart';
-import 'package:salesman_mobile/core/theme/app_text_styles.dart';
+import 'package:salesman_mobile/app/core/bindings/theme/app_colors.dart';
+import 'package:salesman_mobile/app/core/bindings/theme/app_text_styles.dart';
 
 class CustomTextField extends StatelessWidget {
   final TextEditingController? controller;
@@ -116,13 +116,7 @@ class CustomTextField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (label != null) ...[
-          Text(
-            label!,
-            style: AppTextStyles.inputLabel,
-          ),
-          const SizedBox(height: 4),
-        ],
+        if (label != null) ...[Text(label!, style: AppTextStyles.inputLabel), const SizedBox(height: 4)],
         TextFormField(
           controller: controller,
           decoration: InputDecoration(
@@ -130,22 +124,12 @@ class CustomTextField extends StatelessWidget {
             hintStyle: AppTextStyles.inputHint,
             filled: true,
             fillColor: fillColor ?? (enabled ? Colors.white : AppColors.grey100),
-            contentPadding: contentPadding ??
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: contentPadding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: border ?? defaultBorder,
             enabledBorder: enabledBorder ?? defaultBorder,
-            focusedBorder: focusedBorder ??
-                defaultBorder.copyWith(
-                  borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-                ),
-            errorBorder: errorBorder ??
-                defaultBorder.copyWith(
-                  borderSide: const BorderSide(color: AppColors.error, width: 1.0),
-                ),
-            focusedErrorBorder: focusedErrorBorder ??
-                defaultBorder.copyWith(
-                  borderSide: const BorderSide(color: AppColors.error, width: 1.5),
-                ),
+            focusedBorder: focusedBorder ?? defaultBorder.copyWith(borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+            errorBorder: errorBorder ?? defaultBorder.copyWith(borderSide: const BorderSide(color: AppColors.error, width: 1.0)),
+            focusedErrorBorder: focusedErrorBorder ?? defaultBorder.copyWith(borderSide: const BorderSide(color: AppColors.error, width: 1.5)),
             errorText: error,
             errorStyle: errorStyle ?? AppTextStyles.errorText,
             suffixIcon: suffixIcon,
