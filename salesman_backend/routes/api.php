@@ -62,6 +62,7 @@ Route::middleware(['auth:sanctum', 'api'])->group(function () {
     Route::get('/consignments/list', [ConsignmentController::class, 'listAll']);
     Route::get('/consignments/active', [ConsignmentController::class, 'active']);
     Route::get('/consignments/{consignment}/transactions', [ConsignmentController::class, 'transactions']);
+    Route::get('/consignments/{consignment}/product-items', [ConsignmentController::class, 'productItems']);
     
     // Transactions
     Route::apiResource('transactions', TransactionController::class);

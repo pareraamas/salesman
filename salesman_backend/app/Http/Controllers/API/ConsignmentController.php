@@ -868,6 +868,107 @@ class ConsignmentController extends BaseController
      *     )
      * )
      */
+    /**
+     * @OA\Get(
+     *     path="/api/consignments/{id}/product-items",
+     *     operationId="getConsignmentProductItems",
+     *     tags={"Konsinyasi"},
+     *     summary="Mendapatkan daftar item produk untuk konsinyasi",
+     *     description="Mengembalikan daftar item produk yang tersedia untuk konsinyasi tertentu",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID konsinyasi",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Sukses mendapatkan daftar item produk",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="array",
+     *                 @OA\Items(
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="product_id", type="integer", example=1),
+     *                     @OA\Property(property="product_name", type="string", example="Nama Produk"),
+     *                     @OA\Property(property="code", type="string", example="PRD-001"),
+     *                     @OA\Property(property="price", type="number", format="float", example=100000),
+     *                     @OA\Property(property="status", type="string", example="available"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 )
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Daftar item produk berhasil diambil"),
+     *             @OA\Property(property="meta", type="object", example=null),
+     *             @OA\Property(property="code", type="integer", example=200)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Tidak terautentikasi",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Tidak terautentikasi"),
+     *             @OA\Property(property="code", type="integer", example=401)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Data tidak ditemukan",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Data konsinyasi tidak ditemukan"),
+     *             @OA\Property(property="code", type="integer", example=404)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Kesalahan server",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Gagal mengambil daftar item produk"),
+     *             @OA\Property(property="code", type="integer", example=500)
+     *         )
+     *     )
+     * )
+     */
+    public function productItems(Consignment $consignment)
+    {
+        try {
+            $items = $consignment->productItems()
+                ->with(['product'])
+                ->whereNull('transaction_id') // Only get items that haven't been transacted yet
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'product_id' => $item->product_id,
+                        'product_name' => $item->product ? $item->product->name : null,
+                        'code' => $item->code,
+                        'price' => $item->price,
+                        'status' => $item->status,
+                        'created_at' => $item->created_at,
+                        'updated_at' => $item->updated_at,
+                    ];
+                });
+
+            return $this->sendResponse(
+                $items,
+                'Daftar item produk berhasil diambil',
+                HttpResponse::HTTP_OK
+            );
+        } catch (\Exception $e) {
+            Log::error('Error getting consignment product items: ' . $e->getMessage());
+            return $this->sendError(
+                'Gagal mengambil daftar item produk',
+                null,
+                HttpResponse::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
     public function updateStatus(Request $request, Consignment $consignment)
     {
         try {
