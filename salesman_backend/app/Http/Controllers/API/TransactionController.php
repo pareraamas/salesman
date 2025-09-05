@@ -340,14 +340,23 @@ class TransactionController extends BaseController
      *         @OA\MediaType(
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
-     *                 required={"consignment_id", "transaction_date", "sold_quantity"},
+     *                 required={"consignment_id", "transaction_date", "items"},
      *                 @OA\Property(property="consignment_id", type="integer", example=1, description="ID konsinyasi yang terkait"),
      *                 @OA\Property(property="transaction_date", type="string", format="date", example="2025-01-01", description="Tanggal transaksi (format: YYYY-MM-DD)"),
-     *                 @OA\Property(property="sold_quantity", type="integer", example=5, description="Jumlah barang yang terjual"),
-     *                 @OA\Property(property="returned_quantity", type="integer", example=0, description="Jumlah barang yang dikembalikan (opsional)"),
      *                 @OA\Property(property="notes", type="string", example="Catatan transaksi", nullable=true, description="Catatan tambahan (opsional)"),
      *                 @OA\Property(property="sold_items_photo", type="string", format="binary", description="Foto barang yang terjual (format: jpg,jpeg,png|max:2048)"),
-     *                 @OA\Property(property="returned_items_photo", type="string", format="binary", description="Foto barang yang dikembalikan (format: jpg,jpeg,png|max:2048)")
+     *                 @OA\Property(property="returned_items_photo", type="string", format="binary", description="Foto barang yang dikembalikan (format: jpg,jpeg,png|max:2048)"),
+     *                 @OA\Property(
+     *                     property="items",
+     *                     type="array",
+     *                     @OA\Items(
+     *                         @OA\Property(property="product_item_id", type="integer", example=1, description="ID item produk"),
+     *                         @OA\Property(property="sold", type="integer", example=3, description="Jumlah terjual"),
+     *                         @OA\Property(property="returned", type="integer", example=1, description="Jumlah dikembalikan"),
+     *                         @OA\Property(property="price", type="number", format="float", example=2000, description="Harga per item (opsional)")
+     *                     ),
+     *                     description="Daftar item dalam transaksi"
+     *                 )
      *             )
      *         )
      *     ),
@@ -360,23 +369,39 @@ class TransactionController extends BaseController
      *                 @OA\Property(property="id", type="integer", example=1, description="ID transaksi"),
      *                 @OA\Property(property="consignment_id", type="integer", example=1, description="ID konsinyasi"),
      *                 @OA\Property(property="transaction_date", type="string", format="date-time", description="Tanggal transaksi"),
-     *                 @OA\Property(property="sold_quantity", type="integer", example=5, description="Jumlah terjual"),
-     *                 @OA\Property(property="returned_quantity", type="integer", example=0, description="Jumlah dikembalikan"),
+     *                 @OA\Property(property="total_sold", type="integer", example=3, description="Total jumlah terjual"),
+     *                 @OA\Property(property="total_returned", type="integer", example=1, description="Total jumlah dikembalikan"),
+     *                 @OA\Property(property="net_quantity", type="integer", example=2, description="Jumlah bersih (terjual - dikembalikan)"),
+     *                 @OA\Property(property="total_amount", type="number", format="float", example=6000, description="Total nilai transaksi"),
      *                 @OA\Property(property="notes", type="string", nullable=true, example="Catatan transaksi"),
      *                 @OA\Property(property="sold_items_photo_path", type="string", nullable=true, example="transactions/sold/abc123.jpg"),
      *                 @OA\Property(property="returned_items_photo_path", type="string", nullable=true, example="transactions/returned/def456.jpg"),
      *                 @OA\Property(property="created_at", type="string", format="date-time"),
      *                 @OA\Property(property="updated_at", type="string", format="date-time"),
+     *                 @OA\Property(
+     *                     property="items",
+     *                     type="array",
+     *                     @OA\Items(
+     *                         @OA\Property(property="id", type="integer", example=1, description="ID item"),
+     *                         @OA\Property(property="product_id", type="integer", example=1, description="ID produk"),
+     *                         @OA\Property(property="name", type="string", example="Mie Basah", description="Nama produk"),
+     *                         @OA\Property(property="code", type="string", example="SK-001", description="Kode produk"),
+     *                         @OA\Property(property="price", type="number", format="float", example=2000, description="Harga per item"),
+     *                         @OA\Property(property="qty", type="integer", example=10, description="Jumlah stok awal"),
+     *                         @OA\Property(property="sold", type="integer", example=3, description="Jumlah terjual"),
+     *                         @OA\Property(property="returned", type="integer", example=1, description="Jumlah dikembalikan")
+     *                     )
+     *                 ),
      *                 @OA\Property(property="consignment", type="object",
      *                     @OA\Property(property="id", type="integer", example=1),
      *                     @OA\Property(property="store", type="object",
      *                         @OA\Property(property="id", type="integer", example=1),
-     *                         @OA\Property(property="name", type="string", example="Toko Baru")
+     *                         @OA\Property(property="name", type="string", example="Toko Baru"),
+     *                         @OA\Property(property="address", type="string", example="Jl. Contoh No. 123"),
+     *                         @OA\Property(property="phone", type="string", example="081234567890")
      *                     ),
-     *                     @OA\Property(property="product", type="object",
-     *                         @OA\Property(property="id", type="integer", example=1),
-     *                         @OA\Property(property="name", type="string", example="Produk A")
-     *                     )
+     *                     @OA\Property(property="status", type="string", example="active", description="Status konsinyasi"),
+     *                     @OA\Property(property="notes", type="string", nullable=true, example="Catatan konsinyasi")
      *                 )
      *             ),
      *             @OA\Property(property="message", type="string", example="Transaksi berhasil dibuat"),
@@ -390,6 +415,11 @@ class TransactionController extends BaseController
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
      *             @OA\Property(property="message", type="string", example="Data tidak valid"),
+     *             @OA\Property(property="errors", type="object",
+     *                 @OA\Property(property="items", type="array",
+     *                     @OA\Items(type="string", example="Total penjualan melebihi stok yang tersedia")
+     *                 )
+     *             ),
      *             @OA\Property(property="code", type="integer", example=400)
      *         )
      *     ),
@@ -430,8 +460,20 @@ class TransactionController extends BaseController
      *                 @OA\Property(property="consignment_id", type="array",
      *                     @OA\Items(type="string", example="Konsinyasi tidak valid")
      *                 ),
-     *                 @OA\Property(property="sold_quantity", type="array",
+     *                 @OA\Property(property="items", type="array",
+     *                     @OA\Items(type="string", example="Daftar item tidak boleh kosong")
+     *                 ),
+     *                 @OA\Property(property="items.0.product_item_id", type="array",
+     *                     @OA\Items(type="string", example="ID item produk tidak valid")
+     *                 ),
+     *                 @OA\Property(property="items.0.sold", type="array",
      *                     @OA\Items(type="string", example="Jumlah terjual harus diisi")
+     *                 ),
+     *                 @OA\Property(property="items.0.returned", type="array",
+     *                     @OA\Items(type="string", example="Jumlah dikembalikan harus diisi")
+     *                 ),
+     *                 @OA\Property(property="items.0.price", type="array",
+     *                     @OA\Items(type="string", example="Harga harus berupa angka")
      *                 )
      *             ),
      *             @OA\Property(property="code", type="integer", example=422)
@@ -664,13 +706,23 @@ class TransactionController extends BaseController
      *         @OA\MediaType(
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
+     *                 required={"items"},
      *                 @OA\Property(property="consignment_id", type="integer", example=1, description="ID konsinyasi yang terkait"),
      *                 @OA\Property(property="transaction_date", type="string", format="date", example="2025-01-01", description="Tanggal transaksi (format: YYYY-MM-DD)"),
-     *                 @OA\Property(property="sold_quantity", type="integer", example=5, description="Jumlah barang yang terjual"),
-     *                 @OA\Property(property="returned_quantity", type="integer", example=0, description="Jumlah barang yang dikembalikan (opsional)"),
      *                 @OA\Property(property="notes", type="string", example="Catatan transaksi", nullable=true, description="Catatan tambahan (opsional)"),
      *                 @OA\Property(property="sold_items_photo", type="string", format="binary", description="Foto barang yang terjual (format: jpg,jpeg,png|max:2048)"),
-     *                 @OA\Property(property="returned_items_photo", type="string", format="binary", description="Foto barang yang dikembalikan (format: jpg,jpeg,png|max:2048)")
+     *                 @OA\Property(property="returned_items_photo", type="string", format="binary", description="Foto barang yang dikembalikan (format: jpg,jpeg,png|max:2048)"),
+     *                 @OA\Property(
+     *                     property="items",
+     *                     type="array",
+     *                     @OA\Items(
+     *                         @OA\Property(property="product_item_id", type="integer", example=1, description="ID item produk"),
+     *                         @OA\Property(property="sold", type="integer", example=3, description="Jumlah terjual"),
+     *                         @OA\Property(property="returned", type="integer", example=1, description="Jumlah dikembalikan"),
+     *                         @OA\Property(property="price", type="number", format="float", example=2000, description="Harga per item (opsional)")
+     *                     ),
+     *                     description="Daftar item dalam transaksi"
+     *                 )
      *             )
      *         )
      *     ),
@@ -713,6 +765,11 @@ class TransactionController extends BaseController
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
      *             @OA\Property(property="message", type="string", example="Data tidak valid"),
+     *             @OA\Property(property="errors", type="object",
+     *                 @OA\Property(property="items", type="array",
+     *                     @OA\Items(type="string", example="Total penjualan melebihi stok yang tersedia")
+     *                 )
+     *             ),
      *             @OA\Property(property="code", type="integer", example=400)
      *         )
      *     ),
@@ -753,8 +810,20 @@ class TransactionController extends BaseController
      *                 @OA\Property(property="consignment_id", type="array",
      *                     @OA\Items(type="string", example="Konsinyasi tidak valid")
      *                 ),
-     *                 @OA\Property(property="sold_quantity", type="array",
+     *                 @OA\Property(property="items", type="array",
+     *                     @OA\Items(type="string", example="Daftar item tidak boleh kosong")
+     *                 ),
+     *                 @OA\Property(property="items.0.product_item_id", type="array",
+     *                     @OA\Items(type="string", example="ID item produk tidak valid")
+     *                 ),
+     *                 @OA\Property(property="items.0.sold", type="array",
      *                     @OA\Items(type="string", example="Jumlah terjual harus diisi")
+     *                 ),
+     *                 @OA\Property(property="items.0.returned", type="array",
+     *                     @OA\Items(type="string", example="Jumlah dikembalikan harus diisi")
+     *                 ),
+     *                 @OA\Property(property="items.0.price", type="array",
+     *                     @OA\Items(type="string", example="Harga harus berupa angka")
      *                 )
      *             ),
      *             @OA\Property(property="code", type="integer", example=422)

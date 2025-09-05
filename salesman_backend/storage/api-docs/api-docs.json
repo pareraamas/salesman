@@ -3563,7 +3563,7 @@
                                 "required": [
                                     "consignment_id",
                                     "transaction_date",
-                                    "sold_quantity"
+                                    "items"
                                 ],
                                 "properties": {
                                     "consignment_id": {
@@ -3576,16 +3576,6 @@
                                         "type": "string",
                                         "format": "date",
                                         "example": "2025-01-01"
-                                    },
-                                    "sold_quantity": {
-                                        "description": "Jumlah barang yang terjual",
-                                        "type": "integer",
-                                        "example": 5
-                                    },
-                                    "returned_quantity": {
-                                        "description": "Jumlah barang yang dikembalikan (opsional)",
-                                        "type": "integer",
-                                        "example": 0
                                     },
                                     "notes": {
                                         "description": "Catatan tambahan (opsional)",
@@ -3602,6 +3592,36 @@
                                         "description": "Foto barang yang dikembalikan (format: jpg,jpeg,png|max:2048)",
                                         "type": "string",
                                         "format": "binary"
+                                    },
+                                    "items": {
+                                        "description": "Daftar item dalam transaksi",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "product_item_id": {
+                                                    "description": "ID item produk",
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "sold": {
+                                                    "description": "Jumlah terjual",
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "returned": {
+                                                    "description": "Jumlah dikembalikan",
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "price": {
+                                                    "description": "Harga per item (opsional)",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 2000
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -3637,15 +3657,26 @@
                                                     "type": "string",
                                                     "format": "date-time"
                                                 },
-                                                "sold_quantity": {
-                                                    "description": "Jumlah terjual",
+                                                "total_sold": {
+                                                    "description": "Total jumlah terjual",
                                                     "type": "integer",
-                                                    "example": 5
+                                                    "example": 3
                                                 },
-                                                "returned_quantity": {
-                                                    "description": "Jumlah dikembalikan",
+                                                "total_returned": {
+                                                    "description": "Total jumlah dikembalikan",
                                                     "type": "integer",
-                                                    "example": 0
+                                                    "example": 1
+                                                },
+                                                "net_quantity": {
+                                                    "description": "Jumlah bersih (terjual - dikembalikan)",
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "total_amount": {
+                                                    "description": "Total nilai transaksi",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 6000
                                                 },
                                                 "notes": {
                                                     "type": "string",
@@ -3670,6 +3701,55 @@
                                                     "type": "string",
                                                     "format": "date-time"
                                                 },
+                                                "items": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "description": "ID item",
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "product_id": {
+                                                                "description": "ID produk",
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "description": "Nama produk",
+                                                                "type": "string",
+                                                                "example": "Mie Basah"
+                                                            },
+                                                            "code": {
+                                                                "description": "Kode produk",
+                                                                "type": "string",
+                                                                "example": "SK-001"
+                                                            },
+                                                            "price": {
+                                                                "description": "Harga per item",
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 2000
+                                                            },
+                                                            "qty": {
+                                                                "description": "Jumlah stok awal",
+                                                                "type": "integer",
+                                                                "example": 10
+                                                            },
+                                                            "sold": {
+                                                                "description": "Jumlah terjual",
+                                                                "type": "integer",
+                                                                "example": 3
+                                                            },
+                                                            "returned": {
+                                                                "description": "Jumlah dikembalikan",
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
                                                 "consignment": {
                                                     "properties": {
                                                         "id": {
@@ -3685,22 +3765,27 @@
                                                                 "name": {
                                                                     "type": "string",
                                                                     "example": "Toko Baru"
+                                                                },
+                                                                "address": {
+                                                                    "type": "string",
+                                                                    "example": "Jl. Contoh No. 123"
+                                                                },
+                                                                "phone": {
+                                                                    "type": "string",
+                                                                    "example": "081234567890"
                                                                 }
                                                             },
                                                             "type": "object"
                                                         },
-                                                        "product": {
-                                                            "properties": {
-                                                                "id": {
-                                                                    "type": "integer",
-                                                                    "example": 1
-                                                                },
-                                                                "name": {
-                                                                    "type": "string",
-                                                                    "example": "Produk A"
-                                                                }
-                                                            },
-                                                            "type": "object"
+                                                        "status": {
+                                                            "description": "Status konsinyasi",
+                                                            "type": "string",
+                                                            "example": "active"
+                                                        },
+                                                        "notes": {
+                                                            "type": "string",
+                                                            "example": "Catatan konsinyasi",
+                                                            "nullable": true
                                                         }
                                                     },
                                                     "type": "object"
@@ -3739,6 +3824,18 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Data tidak valid"
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "items": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Total penjualan melebihi stok yang tersedia"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
                                         },
                                         "code": {
                                             "type": "integer",
@@ -3845,11 +3942,39 @@
                                                         "example": "Konsinyasi tidak valid"
                                                     }
                                                 },
-                                                "sold_quantity": {
+                                                "items": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Daftar item tidak boleh kosong"
+                                                    }
+                                                },
+                                                "items.0.product_item_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "ID item produk tidak valid"
+                                                    }
+                                                },
+                                                "items.0.sold": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
                                                         "example": "Jumlah terjual harus diisi"
+                                                    }
+                                                },
+                                                "items.0.returned": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Jumlah dikembalikan harus diisi"
+                                                    }
+                                                },
+                                                "items.0.price": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Harga harus berupa angka"
                                                     }
                                                 }
                                             },
@@ -4162,6 +4287,9 @@
                     "content": {
                         "multipart/form-data": {
                             "schema": {
+                                "required": [
+                                    "items"
+                                ],
                                 "properties": {
                                     "consignment_id": {
                                         "description": "ID konsinyasi yang terkait",
@@ -4173,16 +4301,6 @@
                                         "type": "string",
                                         "format": "date",
                                         "example": "2025-01-01"
-                                    },
-                                    "sold_quantity": {
-                                        "description": "Jumlah barang yang terjual",
-                                        "type": "integer",
-                                        "example": 5
-                                    },
-                                    "returned_quantity": {
-                                        "description": "Jumlah barang yang dikembalikan (opsional)",
-                                        "type": "integer",
-                                        "example": 0
                                     },
                                     "notes": {
                                         "description": "Catatan tambahan (opsional)",
@@ -4199,6 +4317,36 @@
                                         "description": "Foto barang yang dikembalikan (format: jpg,jpeg,png|max:2048)",
                                         "type": "string",
                                         "format": "binary"
+                                    },
+                                    "items": {
+                                        "description": "Daftar item dalam transaksi",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "product_item_id": {
+                                                    "description": "ID item produk",
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "sold": {
+                                                    "description": "Jumlah terjual",
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "returned": {
+                                                    "description": "Jumlah dikembalikan",
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "price": {
+                                                    "description": "Harga per item (opsional)",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 2000
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -4337,6 +4485,18 @@
                                             "type": "string",
                                             "example": "Data tidak valid"
                                         },
+                                        "errors": {
+                                            "properties": {
+                                                "items": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Total penjualan melebihi stok yang tersedia"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
                                         "code": {
                                             "type": "integer",
                                             "example": 400
@@ -4442,11 +4602,39 @@
                                                         "example": "Konsinyasi tidak valid"
                                                     }
                                                 },
-                                                "sold_quantity": {
+                                                "items": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Daftar item tidak boleh kosong"
+                                                    }
+                                                },
+                                                "items.0.product_item_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "ID item produk tidak valid"
+                                                    }
+                                                },
+                                                "items.0.sold": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
                                                         "example": "Jumlah terjual harus diisi"
+                                                    }
+                                                },
+                                                "items.0.returned": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Jumlah dikembalikan harus diisi"
+                                                    }
+                                                },
+                                                "items.0.price": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "Harga harus berupa angka"
                                                     }
                                                 }
                                             },
