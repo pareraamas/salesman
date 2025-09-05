@@ -163,11 +163,22 @@ class StoreController extends BaseController
 
             $stores = $query->latest()->paginate($perPage);
 
-            return $this->sendResponse(
-                $stores,
-                'Daftar toko berhasil diambil (BE)',
-                HttpResponse::HTTP_OK
-            );
+            // Format response to match the desired structure
+            $response = [
+                'success' => true,
+                'data' => $stores->items(),
+                'meta' => [
+                    'total' => $stores->total(),
+                    'per_page' => $stores->perPage(),
+                    'current_page' => $stores->currentPage(),
+                    'last_page' => $stores->lastPage(),
+                    'from' => $stores->firstItem(),
+                    'to' => $stores->lastItem()
+                ],
+                'message' => 'Daftar toko berhasil diambil'
+            ];
+
+            return response()->json($response, HttpResponse::HTTP_OK);
         } catch (\Exception $e) {
             Log::error('Error fetching stores: ' . $e->getMessage());
             return $this->sendError(
