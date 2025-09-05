@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
-
 class ConsignmentController extends BaseController
 {
     /**
@@ -107,6 +106,82 @@ class ConsignmentController extends BaseController
      *     )
      * )
      */
+    /**
+     * @OA\Schema(
+     *     schema="Consignment",
+     *     @OA\Property(property="id", type="integer", example=1),
+     *     @OA\Property(property="code", type="string", example="CNS-20250905-001"),
+     *     @OA\Property(property="store_id", type="integer", example=1),
+     *     @OA\Property(property="product_id", type="integer", example=1),
+     *     @OA\Property(property="consignment_date", type="string", format="date", example="2025-09-05"),
+     *     @OA\Property(property="due_date", type="string", format="date", example="2025-10-05"),
+     *     @OA\Property(property="status", type="string", example="active"),
+     *     @OA\Property(property="notes", type="string", example="Konsinyasi produk baru"),
+     *     @OA\Property(property="created_at", type="string", format="date-time"),
+     *     @OA\Property(property="updated_at", type="string", format="date-time"),
+     *     @OA\Property(property="store", type="object",
+     *         @OA\Property(property="id", type="integer", example=1),
+     *         @OA\Property(property="name", type="string", example="Toko Baru")
+     *     ),
+     *     @OA\Property(property="product_items", type="array",
+     *         @OA\Items(ref="#/components/schemas/ProductItem")
+     *     )
+     * )
+     * 
+     * @OA\Schema(
+     *     schema="ProductItem",
+     *     @OA\Property(property="id", type="integer", example=1),
+     *     @OA\Property(property="product_id", type="integer", example=1),
+     *     @OA\Property(property="consignment_id", type="integer", example=1),
+     *     @OA\Property(property="name", type="string", example="Produk A"),
+     *     @OA\Property(property="code", type="string", example="PRD-001"),
+     *     @OA\Property(property="price", type="number", format="float", example=100000),
+     *     @OA\Property(property="qty", type="integer", example=10),
+     *     @OA\Property(property="sales", type="integer", example=5),
+     *     @OA\Property(property="return", type="integer", example=0),
+     *     @OA\Property(property="status", type="string", example="available"),
+     *     @OA\Property(property="created_at", type="string", format="date-time"),
+     *     @OA\Property(property="updated_at", type="string", format="date-time")
+     * )
+     * 
+     * @OA\Schema(
+     *     schema="ConsignmentInput",
+     *     required={"store_id", "product_id", "consignment_date", "product_items"},
+     *     @OA\Property(property="store_id", type="integer", example=1),
+     *     @OA\Property(property="product_id", type="integer", example=1),
+     *     @OA\Property(property="consignment_date", type="string", format="date", example="2025-09-05"),
+     *     @OA\Property(property="due_date", type="string", format="date", example="2025-10-05"),
+     *     @OA\Property(property="notes", type="string", example="Konsinyasi produk baru"),
+     *     @OA\Property(property="product_items", type="array",
+     *         @OA\Items(
+     *             required={"name", "code", "price", "qty"},
+     *             @OA\Property(property="name", type="string", example="Produk A"),
+     *             @OA\Property(property="code", type="string", example="PRD-001"),
+     *             @OA\Property(property="price", type="number", format="float", example=100000),
+     *             @OA\Property(property="qty", type="integer", example=10),
+     *             @OA\Property(property="description", type="string", example="Deskripsi produk A")
+     *         )
+     *     )
+     * )
+     * 
+     * @OA\Schema(
+     *     schema="TransactionInput",
+     *     required={"consignment_id", "transaction_date", "items"},
+     *     @OA\Property(property="consignment_id", type="integer", example=1),
+     *     @OA\Property(property="transaction_date", type="string", format="date", example="2025-09-05"),
+     *     @OA\Property(property="notes", type="string", example="Penjualan pertama"),
+     *     @OA\Property(property="items", type="array",
+     *         @OA\Items(
+     *             required={"product_item_id", "sold", "returned"},
+     *             @OA\Property(property="product_item_id", type="integer", example=1),
+     *             @OA\Property(property="sold", type="integer", example=5),
+     *             @OA\Property(property="returned", type="integer", example=0),
+     *             @OA\Property(property="price", type="number", format="float", example=100000)
+     *         )
+     *     )
+     * )
+     */
+
     /**
      * @OA\Get(
      *     path="/api/consignments/list",
@@ -242,12 +317,35 @@ class ConsignmentController extends BaseController
     /**
      * @OA\Get(
      *     path="/api/consignments/active",
+     *     operationId="getActiveConsignments",
      *     tags={"Konsinyasi"},
      *     summary="Daftar konsinyasi aktif",
+     *     description="Mengembalikan daftar konsinyasi dengan status aktif",
      *     security={{"bearerAuth":{}}},
-     *     @OA\Response(response=200, description="OK")
+     *     @OA\Response(
+     *         response=200,
+     *         description="Sukses mendapatkan daftar konsinyasi aktif",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="array",
+     *                 @OA\Items(ref="#/components/schemas/Consignment")
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Daftar konsinyasi aktif berhasil diambil"),
+     *             @OA\Property(property="meta", type="object", example=null),
+     *             @OA\Property(property="code", type="integer", example=200)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Tidak terautentikasi",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Tidak terautentikasi"),
+     *             @OA\Property(property="code", type="integer", example=401)
+     *         )
+     *     )
      * )
-     */
+     * */
     public function active(Request $request)
     {
         try {
@@ -267,13 +365,62 @@ class ConsignmentController extends BaseController
     /**
      * @OA\Get(
      *     path="/api/consignments/{id}/transactions",
+     *     operationId="getConsignmentTransactions",
      *     tags={"Konsinyasi"},
      *     summary="Daftar transaksi untuk konsinyasi tertentu",
+     *     description="Mengembalikan daftar transaksi untuk konsinyasi tertentu",
      *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="OK")
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID konsinyasi",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Sukses mendapatkan daftar transaksi",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="array",
+     *                 @OA\Items(
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="consignment_id", type="integer", example=1),
+     *                     @OA\Property(property="transaction_date", type="string", format="date", example="2025-09-05"),
+     *                     @OA\Property(property="total_sold", type="integer", example=5),
+     *                     @OA\Property(property="total_returned", type="integer", example=0),
+     *                     @OA\Property(property="net_quantity", type="integer", example=5),
+     *                     @OA\Property(property="total_amount", type="number", format="float", example=500000),
+     *                     @OA\Property(property="notes", type="string", example="Penjualan pertama"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 )
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Daftar transaksi berhasil diambil"),
+     *             @OA\Property(property="meta", type="object", example=null),
+     *             @OA\Property(property="code", type="integer", example=200)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Tidak terautentikasi",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Tidak terautentikasi"),
+     *             @OA\Property(property="code", type="integer", example=401)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Data tidak ditemukan",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Data konsinyasi tidak ditemukan"),
+     *             @OA\Property(property="code", type="integer", example=404)
+     *         )
+     *     )
      * )
-     */
+     * */
     public function transactions(Request $request, Consignment $consignment)
     {
         try {
@@ -295,8 +442,8 @@ class ConsignmentController extends BaseController
      *     path="/api/consignments",
      *     operationId="storeConsignment",
      *     tags={"Konsinyasi"},
-     *     summary="Membuat data konsinyasi baru",
-     *     description="Membuat data konsinyasi baru dengan data yang diberikan",
+     *     summary="Membuat konsinyasi baru",
+     *     description="Membuat data konsinyasi baru beserta item produknya",
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,
@@ -416,7 +563,7 @@ class ConsignmentController extends BaseController
      *     operationId="getConsignmentById",
      *     tags={"Konsinyasi"},
      *     summary="Mendapatkan detail konsinyasi",
-     *     description="Mengembalikan detail konsinyasi berdasarkan ID",
+     *     description="Mengembalikan detail lengkap konsinyasi berdasarkan ID, termasuk daftar item produk dan transaksi",
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
      *         name="id",
@@ -490,7 +637,7 @@ class ConsignmentController extends BaseController
      *     operationId="updateConsignment",
      *     tags={"Konsinyasi"},
      *     summary="Memperbarui data konsinyasi",
-     *     description="Memperbarui data konsinyasi berdasarkan ID dengan data yang diberikan",
+     *     description="Memperbarui data konsinyasi berdasarkan ID. Hanya data yang dikirim yang akan diupdate.",
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
      *         name="id",
@@ -502,17 +649,12 @@ class ConsignmentController extends BaseController
      *     @OA\RequestBody(
      *         required=true,
      *         description="Data konsinyasi yang akan diperbarui",
-     *         @OA\JsonContent(ref="#/components/schemas/ConsignmentInput")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Data konsinyasi berhasil diperbarui",
      *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="data", ref="#/components/schemas/Consignment"),
-     *             @OA\Property(property="message", type="string", example="Data konsinyasi berhasil diperbarui"),
-     *             @OA\Property(property="meta", type="object", example=null),
-     *             @OA\Property(property="code", type="integer", example=200)
+     *             @OA\Property(property="store_id", type="integer", example=1),
+     *             @OA\Property(property="product_id", type="integer", example=1),
+     *             @OA\Property(property="consignment_date", type="string", format="date", example="2025-09-05"),
+     *             @OA\Property(property="due_date", type="string", format="date", example="2025-10-05"),
+     *             @OA\Property(property="notes", type="string", example="Update catatan konsinyasi")
      *         )
      *     ),
      *     @OA\Response(
@@ -655,14 +797,14 @@ class ConsignmentController extends BaseController
             );
         }
     }
-    
+
     /**
      * @OA\Delete(
      *     path="/api/consignments/{id}",
      *     operationId="deleteConsignment",
      *     tags={"Konsinyasi"},
      *     summary="Menghapus data konsinyasi",
-     *     description="Menghapus data konsinyasi berdasarkan ID",
+     *     description="Menghapus data konsinyasi berdasarkan ID. Hanya bisa dilakukan jika tidak ada transaksi terkait.",
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
      *         name="id",
@@ -775,14 +917,14 @@ class ConsignmentController extends BaseController
      *     path="/api/consignments/{id}/update-status",
      *     operationId="updateConsignmentStatus",
      *     tags={"Konsinyasi"},
-     *     summary="Memperbarui status konsinyasi (terjual/dikembalikan)",
-     *     description="Memperbarui status konsinyasi menjadi terjual atau dikembalikan dengan kuantitas yang ditentukan",
+     *     summary="Memperbarui status konsinyasi",
+     *     description="Memperbarui status konsinyasi (sold/returned) dan mencatat transaksi. Hanya bisa memperbarui status jika jumlah terjual + dikembalikan tidak melebihi stok yang tersedia.",
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         required=true,
-     *         description="ID konsinyasi yang akan diperbarui statusnya",
+     *         description="ID konsinyasi yang akan diupdate statusnya",
      *         @OA\Schema(type="integer", example=1)
      *     ),
      *     @OA\RequestBody(

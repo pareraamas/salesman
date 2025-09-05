@@ -459,10 +459,66 @@
                     "Konsinyasi"
                 ],
                 "summary": "Daftar konsinyasi aktif",
-                "operationId": "f6328beb3504ac27a7a275c4dfa5c317",
+                "description": "Mengembalikan daftar konsinyasi dengan status aktif",
+                "operationId": "getActiveConsignments",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Sukses mendapatkan daftar konsinyasi aktif",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Consignment"
+                                            }
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Daftar konsinyasi aktif berhasil diambil"
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "example": null
+                                        },
+                                        "code": {
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Tidak terautentikasi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Tidak terautentikasi"
+                                        },
+                                        "code": {
+                                            "type": "integer",
+                                            "example": 401
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -478,20 +534,146 @@
                     "Konsinyasi"
                 ],
                 "summary": "Daftar transaksi untuk konsinyasi tertentu",
-                "operationId": "ab0d2b9f79c1508ca6be325453f963a7",
+                "description": "Mengembalikan daftar transaksi untuk konsinyasi tertentu",
+                "operationId": "getConsignmentTransactions",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
+                        "description": "ID konsinyasi",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Sukses mendapatkan daftar transaksi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "consignment_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "transaction_date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2025-09-05"
+                                                    },
+                                                    "total_sold": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    },
+                                                    "total_returned": {
+                                                        "type": "integer",
+                                                        "example": 0
+                                                    },
+                                                    "net_quantity": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    },
+                                                    "total_amount": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 500000
+                                                    },
+                                                    "notes": {
+                                                        "type": "string",
+                                                        "example": "Penjualan pertama"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Daftar transaksi berhasil diambil"
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "example": null
+                                        },
+                                        "code": {
+                                            "type": "integer",
+                                            "example": 200
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Tidak terautentikasi",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Tidak terautentikasi"
+                                        },
+                                        "code": {
+                                            "type": "integer",
+                                            "example": 401
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Data tidak ditemukan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Data konsinyasi tidak ditemukan"
+                                        },
+                                        "code": {
+                                            "type": "integer",
+                                            "example": 404
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -506,8 +688,8 @@
                 "tags": [
                     "Konsinyasi"
                 ],
-                "summary": "Membuat data konsinyasi baru",
-                "description": "Membuat data konsinyasi baru dengan data yang diberikan",
+                "summary": "Membuat konsinyasi baru",
+                "description": "Membuat data konsinyasi baru beserta item produknya",
                 "operationId": "storeConsignment",
                 "requestBody": {
                     "description": "Data konsinyasi yang akan dibuat",
@@ -650,7 +832,7 @@
                     "Konsinyasi"
                 ],
                 "summary": "Mendapatkan detail konsinyasi",
-                "description": "Mengembalikan detail konsinyasi berdasarkan ID",
+                "description": "Mengembalikan detail lengkap konsinyasi berdasarkan ID, termasuk daftar item produk dan transaksi",
                 "operationId": "getConsignmentById",
                 "parameters": [
                     {
@@ -780,7 +962,7 @@
                     "Konsinyasi"
                 ],
                 "summary": "Memperbarui data konsinyasi",
-                "description": "Memperbarui data konsinyasi berdasarkan ID dengan data yang diberikan",
+                "description": "Memperbarui data konsinyasi berdasarkan ID. Hanya data yang dikirim yang akan diupdate.",
                 "operationId": "updateConsignment",
                 "parameters": [
                     {
@@ -800,43 +982,36 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/ConsignmentInput"
+                                "properties": {
+                                    "store_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "product_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "consignment_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-09-05"
+                                    },
+                                    "due_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-10-05"
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "Update catatan konsinyasi"
+                                    }
+                                },
+                                "type": "object"
                             }
                         }
                     }
                 },
                 "responses": {
-                    "200": {
-                        "description": "Data konsinyasi berhasil diperbarui",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "data": {
-                                            "$ref": "#/components/schemas/Consignment"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Data konsinyasi berhasil diperbarui"
-                                        },
-                                        "meta": {
-                                            "type": "object",
-                                            "example": null
-                                        },
-                                        "code": {
-                                            "type": "integer",
-                                            "example": 200
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
                     "400": {
                         "description": "Permintaan tidak valid",
                         "content": {
@@ -981,7 +1156,7 @@
                     "Konsinyasi"
                 ],
                 "summary": "Menghapus data konsinyasi",
-                "description": "Menghapus data konsinyasi berdasarkan ID",
+                "description": "Menghapus data konsinyasi berdasarkan ID. Hanya bisa dilakukan jika tidak ada transaksi terkait.",
                 "operationId": "deleteConsignment",
                 "parameters": [
                     {
@@ -1156,19 +1331,19 @@
                 ]
             }
         },
-        "/api/consignments/{id}/update-status": {
-            "post": {
+        "/api/consignments/{id}/product-items": {
+            "get": {
                 "tags": [
                     "Konsinyasi"
                 ],
-                "summary": "Memperbarui status konsinyasi (terjual/dikembalikan)",
-                "description": "Memperbarui status konsinyasi menjadi terjual atau dikembalikan dengan kuantitas yang ditentukan",
-                "operationId": "updateConsignmentStatus",
+                "summary": "Mendapatkan daftar item produk untuk konsinyasi",
+                "description": "Mengembalikan daftar item produk yang tersedia untuk konsinyasi tertentu",
+                "operationId": "getConsignmentProductItems",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "ID konsinyasi yang akan diperbarui statusnya",
+                        "description": "ID konsinyasi",
                         "required": true,
                         "schema": {
                             "type": "integer",
@@ -1176,54 +1351,9 @@
                         }
                     }
                 ],
-                "requestBody": {
-                    "description": "Data pembaruan status konsinyasi",
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "status",
-                                    "sold_quantity",
-                                    "returned_quantity"
-                                ],
-                                "properties": {
-                                    "status": {
-                                        "description": "Status baru konsinyasi (sold/returned)",
-                                        "type": "string",
-                                        "enum": [
-                                            "sold",
-                                            "returned"
-                                        ],
-                                        "example": "sold"
-                                    },
-                                    "sold_quantity": {
-                                        "description": "Jumlah barang yang terjual",
-                                        "type": "integer",
-                                        "minimum": 0,
-                                        "example": 5
-                                    },
-                                    "returned_quantity": {
-                                        "description": "Jumlah barang yang dikembalikan",
-                                        "type": "integer",
-                                        "minimum": 0,
-                                        "example": 0
-                                    },
-                                    "notes": {
-                                        "description": "Catatan tambahan",
-                                        "type": "string",
-                                        "example": "Pembayaran lunas",
-                                        "nullable": true
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
-                        "description": "Status konsinyasi berhasil diperbarui",
+                        "description": "Sukses mendapatkan daftar item produk",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1233,11 +1363,49 @@
                                             "example": true
                                         },
                                         "data": {
-                                            "$ref": "#/components/schemas/Consignment"
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "product_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "product_name": {
+                                                        "type": "string",
+                                                        "example": "Nama Produk"
+                                                    },
+                                                    "code": {
+                                                        "type": "string",
+                                                        "example": "PRD-001"
+                                                    },
+                                                    "price": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 100000
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "available"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Status konsinyasi berhasil diperbarui"
+                                            "example": "Daftar item produk berhasil diambil"
                                         },
                                         "meta": {
                                             "type": "object",
@@ -1246,30 +1414,6 @@
                                         "code": {
                                             "type": "integer",
                                             "example": 200
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Permintaan tidak valid",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Jumlah terjual melebihi stok yang tersedia"
-                                        },
-                                        "code": {
-                                            "type": "integer",
-                                            "example": 400
                                         }
                                     },
                                     "type": "object"
@@ -1301,30 +1445,6 @@
                             }
                         }
                     },
-                    "403": {
-                        "description": "Tidak diizinkan",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Anda tidak memiliki izin untuk memperbarui status konsinyasi ini"
-                                        },
-                                        "code": {
-                                            "type": "integer",
-                                            "example": 403
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
                     "404": {
                         "description": "Data tidak ditemukan",
                         "content": {
@@ -1349,42 +1469,6 @@
                             }
                         }
                     },
-                    "422": {
-                        "description": "Validasi gagal",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Validasi gagal"
-                                        },
-                                        "errors": {
-                                            "properties": {
-                                                "status": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string",
-                                                        "example": "The selected status is invalid."
-                                                    }
-                                                }
-                                            },
-                                            "type": "object"
-                                        },
-                                        "code": {
-                                            "type": "integer",
-                                            "example": 422
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
                     "500": {
                         "description": "Kesalahan server",
                         "content": {
@@ -1397,7 +1481,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Gagal memperbarui status konsinyasi"
+                                            "example": "Gagal mengambil daftar item produk"
                                         },
                                         "code": {
                                             "type": "integer",
