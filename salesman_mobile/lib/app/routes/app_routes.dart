@@ -15,6 +15,7 @@ abstract class Routes {
   // Features
   static const STORES = _Paths.STORES;
   static const STORE_DETAIL = _Paths.STORE_DETAIL;
+  static const ADD_STORE_VISIT = _Paths.ADD_STORE_VISIT;
   static const PRODUCTS = _Paths.PRODUCTS;
   static const PRODUCT_CREATE = _Paths.PRODUCT_CREATE;
   static const PRODUCT_UPDATE = _Paths.PRODUCT_UPDATE;
@@ -41,6 +42,7 @@ abstract class _Paths {
   // Features
   static const STORES = '/stores';
   static const STORE_DETAIL = '/stores/:id';
+  static const ADD_STORE_VISIT = '/stores/:id/visit';
   static const PRODUCTS = '/products';
   static const PRODUCT_CREATE = '/product-create';
   static const PRODUCT_UPDATE = '/products/:id/edit';

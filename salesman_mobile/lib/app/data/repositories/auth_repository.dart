@@ -1,41 +1,118 @@
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
+import 'package:salesman_mobile/app/core/api_url.dart';
 import 'package:salesman_mobile/app/data/models/app_response.dart';
 import 'package:salesman_mobile/app/data/models/user_model.dart';
 import 'package:salesman_mobile/app/data/sources/api_service.dart';
-import 'package:salesman_mobile/app/core/api_url.dart';
 
 class AuthRepository extends GetxService {
   final ApiService _apiService = Get.find<ApiService>();
-  final _logger = Logger(printer: PrettyPrinter(methodCount: 0, errorMethodCount: 5, lineLength: 50, colors: true, printEmojis: true));
+  final _logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 0,
+      errorMethodCount: 5,
+      lineLength: 50,
+      colors: true,
+      printEmojis: true,
+    ),
+  );
 
   /// Login with email and password
-  Future<AppResponse<Map<String, dynamic>>> login(String email, String password) async {
+  Future<AppResponse<Map<String, dynamic>>> login(
+    String email,
+    String password,
+  ) async {
     try {
-      final response = await _apiService.post<Map<String, dynamic>>(ApiUrl.login, data: {'email': email, 'password': password});
+      final response = await _apiService.post<Map<String, dynamic>>(
+        ApiUrl.login,
+        data: {
+          'email': email,
+          'password': password,
+        },
+      );
 
       if (response.success && response.data != null) {
         final responseData = response.data!;
-        final token = responseData['token'];
+        final token = responseData['data']?['token'];
+        final userData = responseData['data']?['user'];
 
-        // Set token after successful login
-        if (token != null) {
+        if (token != null && userData != null) {
           await _apiService.setAuthToken(token);
+          final user = UserModel.fromJson(userData);
+          
+          return AppResponse<Map<String, dynamic>>(
+            success: true,
+            data: {
+              'user': user,
+              'token': token,
+            },
+            message: responseData['message'] ?? 'Login berhasil',
+          );
         }
-
-        return AppResponse<Map<String, dynamic>>(
-          success: true,
-          data: {'user': UserModel.fromJson(responseData['user'] ?? responseData['data'] ?? {}), 'token': token},
-          message: response.message,
-        );
       }
 
-      return AppResponse<Map<String, dynamic>>(success: false, message: response.message ?? 'Login gagal', errors: response.errors);
+      return AppResponse<Map<String, dynamic>>(
+        success: false,
+        message: response.data?['message'] ?? 'Login gagal',
+        errors: response.errors,
+      );
     } catch (e) {
       _logger.e('Login error: $e');
       return AppResponse<Map<String, dynamic>>(
         success: false,
-        message: e.toString().contains('Exception: ') ? e.toString().split('Exception: ')[1] : 'Terjadi kesalahan saat login',
+        message: e.toString().contains('Exception: ')
+            ? e.toString().split('Exception: ')[1]
+            : 'Terjadi kesalahan saat login',
+      );
+    }
+  }
+
+  /// Get current authenticated user
+  Future<AppResponse<UserModel>> getCurrentUser() async {
+    try {
+      final response = await _apiService.get<Map<String, dynamic>>(ApiUrl.user);
+
+      if (response.success && response.data != null) {
+        final userData = response.data!['data'];
+        if (userData != null) {
+          return AppResponse<UserModel>(
+            success: true,
+            data: UserModel.fromJson(userData),
+            message: response.data?['message'],
+          );
+        }
+      }
+
+      return AppResponse<UserModel>(
+        success: false,
+        message: response.data?['message'] ?? 'Gagal mengambil data pengguna',
+        errors: response.errors,
+      );
+    } catch (e) {
+      _logger.e('Get current user error: $e');
+      return AppResponse<UserModel>(
+        success: false,
+        message: 'Terjadi kesalahan saat mengambil data pengguna',
+      );
+    }
+  }
+
+  /// Logout user
+  Future<AppResponse<bool>> logoutUser() async {
+    try {
+      await _apiService.post(ApiUrl.logout);
+      await _apiService.clearAuthToken();
+      return AppResponse<bool>(
+        success: true,
+        data: true,
+        message: 'Logout berhasil',
+      );
+    } catch (e) {
+      _logger.e('Logout error: $e');
+      return AppResponse<bool>(
+        success: false,
+        data: false,
+        message: 'Terjadi kesalahan saat logout',
       );
     }
   }
@@ -43,7 +120,11 @@ class AuthRepository extends GetxService {
   /// Check if user is logged in
   Future<bool> isLoggedIn() async {
     final token = await _apiService.token;
-    return token != null && token.isNotEmpty;
+    if (token == null || token.isEmpty) return false;
+    
+    // Verify token by getting user data
+    final response = await getCurrentUser();
+    return response.success && response.data != null;
   }
 
   /// Register new user
