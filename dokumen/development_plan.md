@@ -30,34 +30,34 @@
 
 ### Fase 1: Menyelesaikan Fitur Inti
 
-#### 1. Modul Konsinyasi
-- [ ] Daftar konsinyasi dengan filter
-- [ ] Buat konsinyasi baru
+#### 1. Modul Konsinyasi (Berdasarkan consignment_api.md)
+- [ ] Daftar konsinyasi dengan filter (store_id, product_id, status)
+- [ ] Buat konsinyasi baru (store_id, product_id, quantity, start_date, end_date)
 - [ ] Tampilan detail konsinyasi
-- [ ] Update status/kuantitas konsinyasi
+- [ ] Daftar transaksi konsinyasi (konsignment transactions)
 
-#### 2. Modul Transaksi
-- [ ] Daftar transaksi dengan filter
-- [ ] Buat transaksi penjualan/retur
+#### 2. Modul Transaksi (Berdasarkan transaction_api.md)
+- [ ] Daftar transaksi dengan filter (consignment_id, store_id, product_id, date range)
+- [ ] Buat transaksi (consignment_id, transaction_date, items)
 - [ ] Tampilan detail transaksi
-- [ ] Unggah dokumentasi foto
+- [ ] Ringkasan transaksi (summary)
 
-#### 3. Modul Laporan
-- [ ] Laporan penjualan
-- [ ] Dashboard kinerja
-- [ ] Fungsi ekspor
+#### 3. Modul Laporan (Berdasarkan report_api.md)
+- [ ] Laporan penjualan (dengan filter tanggal, toko, produk)
+- [ ] Laporan konsinyasi (filter status, toko, produk)
+- [ ] Laporan kinerja (performance report)
 
 ### Fase 2: Meningkatkan Fitur yang Ada
 
-#### Modul Toko
-- [ ] Tambahkan tampilan peta untuk toko terdekat
-- [ ] Pelacakan kunjungan toko
-- [ ] Dukungan offline untuk data toko
+#### Modul Toko (Berdasarkan store_api.md)
+- [ ] Daftar toko terdekat (menggunakan latitude/longitude)
+- [ ] Pencarian toko (search by name/address)
+- [ ] Detail toko (termasuk lokasi peta)
 
-#### Modul Produk
-- [ ] Kategori produk
-- [ ] Pemindaian barcode
-- [ ] Manajemen stok
+#### Modul Produk (Berdasarkan product_api.md)
+- [ ] Daftar produk dengan filter (search, category_id)
+- [ ] Detail produk
+- [ ] Daftar kategori produk
 
 ### Fase 3: Penyempurnaan & Optimalisasi
 
@@ -72,12 +72,10 @@
    - Tampilan kosong
    - Pull-to-refresh
 
-3. **Merombak Modul Home**
-   - Desain ulang tampilan dashboard
-   - Tambahkan ringkasan statistik
-   - Tampilkan aktivitas terbaru
-   - Integrasi dengan fitur utama (toko, produk, transaksi)
-   - Tambahkan navigasi cepat
+3. **Pengembangan Dashboard**
+   - Ringkasan statistik (berdasarkan API laporan yang tersedia)
+   - Aktivitas terbaru (transaksi terkini)
+   - Navigasi cepat ke fitur utama
 
 ## Pertimbangan Teknis
 
