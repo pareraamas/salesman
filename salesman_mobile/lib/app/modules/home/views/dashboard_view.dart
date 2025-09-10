@@ -120,6 +120,7 @@ class DashboardView extends GetView {
           children: [
             _buildQuickAccessCard('Produk', Icons.shopping_bag_outlined, Colors.blue, () => Get.toNamed(Routes.PRODUCTS)),
             _buildQuickAccessCard('Toko', Icons.store_outlined, Colors.green, () => Get.toNamed(Routes.STORES)),
+            _buildQuickAccessCard('Konsinyasi', Icons.inventory_outlined, Colors.orange, () => Get.toNamed(Routes.CONSIGNMENTS)),
           ],
         ),
       ],

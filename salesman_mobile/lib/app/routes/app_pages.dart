@@ -1,18 +1,28 @@
 import 'package:get/get.dart';
-import 'package:salesman_mobile/app/modules/auth/views/register_view.dart';
 
+import '../core/middleware/auth_middleware.dart';
 import '../modules/auth/bindings/auth_binding.dart';
 import '../modules/auth/views/login_view.dart';
+import '../modules/auth/views/register_view.dart';
+import '../modules/consignment/bindings/consignment_binding.dart';
+import '../modules/consignment/views/consignment_list_view.dart';
+import '../modules/consignment_detail/bindings/consignment_detail_binding.dart';
+import '../modules/consignment_detail/views/consignment_detail_view.dart';
+import '../modules/consignment_edit/bindings/consignment_edit_binding.dart';
+import '../modules/consignment_edit/views/consignment_edit_view.dart';
+import '../modules/consignment_create/bindings/consignment_create_binding.dart';
+import '../modules/consignment_create/views/consignment_create_view.dart';
+import '../modules/consignment_transaction/bindings/consignment_transaction_binding.dart';
+import '../modules/consignment_transaction/views/consignment_transaction_view.dart';
 import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
-import 'package:salesman_mobile/app/modules/product/bindings/product_binding.dart';
-import 'package:salesman_mobile/app/modules/product/views/product_list_view.dart';
-import 'package:salesman_mobile/app/modules/product/views/product_create_view.dart';
-import 'package:salesman_mobile/app/modules/product/views/product_update_view.dart';
-import 'package:salesman_mobile/app/modules/store/bindings/store_binding.dart';
-import 'package:salesman_mobile/app/modules/store/views/store_detail_view.dart';
-import 'package:salesman_mobile/app/modules/store/views/store_list_view.dart';
-import 'package:salesman_mobile/app/core/middleware/auth_middleware.dart';
+import '../modules/product/bindings/product_binding.dart';
+import '../modules/product/views/product_create_view.dart';
+import '../modules/product/views/product_list_view.dart';
+import '../modules/product/views/product_update_view.dart';
+import '../modules/store/bindings/store_binding.dart';
+import '../modules/store/views/store_detail_view.dart';
+import '../modules/store/views/store_list_view.dart';
 
 part 'app_routes.dart';
 
@@ -71,10 +81,41 @@ class AppPages {
       binding: StoreBinding(),
       middlewares: [AuthMiddleware()],
     ),
+    // Consignment Routes
+    GetPage(
+      name: _Paths.CONSIGNMENTS,
+      page: () => const ConsignmentListView(),
+      binding: ConsignmentBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: _Paths.CONSIGNMENT_CREATE,
+      page: () => const ConsignmentCreateView(),
+      binding: ConsignmentCreateBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: _Paths.CONSIGNMENT_TRANSACTIONS,
+      page: () => const ConsignmentTransactionView(),
+      binding: ConsignmentTransactionBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
     GetPage(
       name: _Paths.STORE_DETAIL,
       page: () => const StoreDetailView(),
       binding: StoreBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: _Paths.CONSIGNMENT_DETAIL,
+      page: () => const ConsignmentDetailView(),
+      binding: ConsignmentDetailBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: _Paths.CONSIGNMENT_EDIT,
+      page: () => const ConsignmentEditView(),
+      binding: ConsignmentEditBinding(),
       middlewares: [AuthMiddleware()],
     ),
   ];

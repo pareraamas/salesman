@@ -83,6 +83,28 @@ class ConsignmentRepository {
   }
 
   Future<AppResponse<ConsignmentModel>> createConsignment(ConsignmentModel consignment) async {
+    // Validasi input
+    if (consignment.items.isEmpty) {
+      return AppResponse<ConsignmentModel>(
+        success: false,
+        message: 'Minimal ada satu produk dalam konsinyasi',
+      );
+    }
+    
+    if (consignment.status.isEmpty) {
+      return AppResponse<ConsignmentModel>(
+        success: false,
+        message: 'Status konsinyasi tidak boleh kosong',
+      );
+    }
+    
+    if (consignment.startDate.isAfter(DateTime.now())) {
+      return AppResponse<ConsignmentModel>(
+        success: false,
+        message: 'Tanggal mulai tidak boleh lebih besar dari hari ini',
+      );
+    }
+    
     try {
       final response = await _apiService.post<Map<String, dynamic>>(
         ApiUrl.consignments, 
@@ -113,6 +135,28 @@ class ConsignmentRepository {
   }
 
   Future<AppResponse<ConsignmentModel>> updateConsignment(ConsignmentModel consignment) async {
+    // Validasi input
+    if (consignment.items.isEmpty) {
+      return AppResponse<ConsignmentModel>(
+        success: false,
+        message: 'Minimal ada satu produk dalam konsinyasi',
+      );
+    }
+    
+    if (consignment.status.isEmpty) {
+      return AppResponse<ConsignmentModel>(
+        success: false,
+        message: 'Status konsinyasi tidak boleh kosong',
+      );
+    }
+    
+    if (consignment.startDate.isAfter(DateTime.now())) {
+      return AppResponse<ConsignmentModel>(
+        success: false,
+        message: 'Tanggal mulai tidak boleh lebih besar dari hari ini',
+      );
+    }
+    
     try {
       final response = await _apiService.put<Map<String, dynamic>>(
         '${ApiUrl.consignmentById}${consignment.id}', 
