@@ -31,16 +31,16 @@
 ### Fase 1: Menyelesaikan Fitur Inti
 
 #### 1. Modul Konsinyasi (Berdasarkan consignment_api.md)
-- [ ] Daftar konsinyasi dengan filter (store_id, product_id, status)
-- [ ] Buat konsinyasi baru (store_id, product_id, quantity, start_date, end_date)
-- [ ] Tampilan detail konsinyasi
-- [ ] Daftar transaksi konsinyasi (konsignment transactions)
+- [x] Daftar konsinyasi dengan filter (store_id, product_id, status)
+- [x] Buat konsinyasi baru (store_id, product_id, quantity, start_date, end_date)
+- [x] Tampilan detail konsinyasi
+- [x] Daftar transaksi konsinyasi (konsignment transactions)
 
 #### 2. Modul Transaksi (Berdasarkan transaction_api.md)
-- [ ] Daftar transaksi dengan filter (consignment_id, store_id, product_id, date range)
-- [ ] Buat transaksi (consignment_id, transaction_date, items)
-- [ ] Tampilan detail transaksi
-- [ ] Ringkasan transaksi (summary)
+- [x] Daftar transaksi dengan filter (consignment_id, store_id, product_id, date range)
+- [x] Buat transaksi (consignment_id, transaction_date, items)
+- [x] Tampilan detail transaksi dengan aksi (batalkan, selesaikan, share)
+- [x] Ringkasan transaksi (summary)
 
 #### 3. Modul Laporan (Berdasarkan report_api.md)
 - [ ] Laporan penjualan (dengan filter tanggal, toko, produk)

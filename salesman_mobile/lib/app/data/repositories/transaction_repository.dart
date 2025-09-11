@@ -180,4 +180,34 @@ class TransactionRepository {
       );
     }
   }
+
+  Future<AppResponse<TransactionModel>> updateTransactionStatus(int id, String status) async {
+    try {
+      final response = await _apiService.put<Map<String, dynamic>>(
+        '${ApiUrl.transactionById}$id/status',
+        data: {'status': status},
+        fromJsonT: (json) => json as Map<String, dynamic>,
+      );
+
+      if (response.success && response.data != null) {
+        return AppResponse<TransactionModel>(
+          success: true,
+          data: TransactionModel.fromJson(response.data!['data']),
+        );
+      }
+      
+      return AppResponse<TransactionModel>(
+        success: false,
+        message: response.message ?? 'Gagal memperbarui status transaksi',
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      _logger.e('Update transaction status error: $e');
+      return AppResponse<TransactionModel>(
+        success: false,
+        message: 'Terjadi kesalahan saat memperbarui status transaksi',
+      );
+    }
+  }
 }

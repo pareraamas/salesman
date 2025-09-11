@@ -14,6 +14,9 @@ import '../modules/consignment_create/bindings/consignment_create_binding.dart';
 import '../modules/consignment_create/views/consignment_create_view.dart';
 import '../modules/consignment_transaction/bindings/consignment_transaction_binding.dart';
 import '../modules/consignment_transaction/views/consignment_transaction_view.dart';
+import '../modules/transaction/bindings/transaction_binding.dart';
+import '../modules/transaction/views/transaction_list_view.dart';
+import '../modules/transaction/views/transaction_detail_view.dart';
 import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
 import '../modules/product/bindings/product_binding.dart';
@@ -116,6 +119,23 @@ class AppPages {
       name: _Paths.CONSIGNMENT_EDIT,
       page: () => const ConsignmentEditView(),
       binding: ConsignmentEditBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    
+    // Transaction Routes
+    GetPage(
+      name: _Paths.TRANSACTIONS,
+      page: () => const TransactionListView(),
+      binding: TransactionBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: _Paths.TRANSACTION_DETAIL,
+      page: () {
+        final id = int.parse(Get.parameters['id'] ?? '0');
+        return TransactionDetailView(transactionId: id);
+      },
+      binding: TransactionBinding(),
       middlewares: [AuthMiddleware()],
     ),
   ];

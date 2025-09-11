@@ -27,8 +27,31 @@ class TransactionItemModel {
     this.updatedAt,
   });
 
-  factory TransactionItemModel.fromJson(Map<String, dynamic> json) => 
-      _$TransactionItemModelFromJson(json);
-  
+  factory TransactionItemModel.fromJson(Map<String, dynamic> json) => _$TransactionItemModelFromJson(json);
+
   Map<String, dynamic> toJson() => _$TransactionItemModelToJson(this);
+
+  TransactionItemModel copyWith({
+    int? id,
+    int? transactionId,
+    int? productId,
+    int? quantity,
+    double? price,
+    double? subtotal,
+    ProductModel? product,
+    String? createdAt,
+    String? updatedAt,
+  }) {
+    return TransactionItemModel(
+      id: id ?? this.id,
+      transactionId: transactionId ?? this.transactionId,
+      productId: productId ?? this.productId,
+      quantity: quantity ?? this.quantity,
+      price: price ?? this.price,
+      subtotal: subtotal ?? this.subtotal,
+      product: product ?? this.product,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }
